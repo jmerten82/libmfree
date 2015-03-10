@@ -16,7 +16,9 @@
 #include <vector>
 #include <stdexcept>
 #include <cmath>
+#include <hdf5.h>
 #include <H5Cpp.h>
+#include <mfree/unstructured_grid.h>
 
 #ifndef H5_NO_NAMESPACE
     using namespace H5;

@@ -15,6 +15,8 @@ jmerten@caltech.edu
 #include <cmath>
 #include <ctime>
 #include <stdexcept>
+#include <fstream>
+#include <string>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>

@@ -8,7 +8,7 @@ August 2014
 jmerten@caltech.edu
 ***/
 
-#include <saw/containers.h>
+#include <mfree/containers.h>
 
 multiple_image_system::multiple_image_system(double redshift_in, double sigma_in)
 {

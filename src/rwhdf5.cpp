@@ -35,7 +35,7 @@ void write_mfree_to_hdf5(unstructured_grid *input, string filename)
 
   for(int i = 0; i < dims[1]; i++)
     {
-      for(j = 0; j < dims[0]; j++)
+      for(int j = 0; j < dims[0]; j++)
 	{ 
 	  temp.push_back((* input)(i,j));
 	}
@@ -44,13 +44,14 @@ void write_mfree_to_hdf5(unstructured_grid *input, string filename)
   //Writing coordinates into dataset
   dataset.write(&input[0], H5T_NATIVE_DOUBLE);
 
-  //Finally adding some attributes to the dataset 
-  DataSpace attr_dataspace1 = DataSpace (1, 1 );
-  DataSpace attr_dataspace2 = DataSpace (1, 1 );
+  //Finally adding some attributes to the dataset
+  hsize_t dim[1] = {2};  
+  DataSpace attr_dataspace1 = DataSpace (1, dim);
+  DataSpace attr_dataspace2 = DataSpace (1, dim);
   Attribute attribute1 = dataset.createAttribute("DIM", H5T_NATIVE_INT,attr_dataspace1);
   Attribute attribute2 = dataset.createAttribute("#Nodes", H5T_NATIVE_INT,attr_dataspace2);
-  attribute1.write(H5T_NATIVE_INT, dims[0]);
-  attribute2.write(H5T_NATIVE_INT, dims[1]);
+  attribute1.write(H5T_NATIVE_INT, &dims[0]);
+  attribute2.write(H5T_NATIVE_INT, &dims[1]);
 
   //No need to close dataspaces and sets in a C++ implementation.
 
