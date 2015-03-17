@@ -37,7 +37,6 @@ shared: $(LIBNAMEDYN)
 radial_basis_function.o:
 unstructured_grid.o: radial_basis_function.o
 grid_utils.o: unstructured_grid.o
-containers.o:
 rwfits.o:
 rwhdf5.o:
 
