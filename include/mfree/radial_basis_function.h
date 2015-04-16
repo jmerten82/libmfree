@@ -394,6 +394,7 @@ class gaussian_rbf : public radial_basis_function
   */
  public:
 
+  gaussian_rbf(double epsilon = 1.);
   double operator() (double radius);
   double operator() (double x_in, double y_in, double z_in = 0.);
   double operator() (coordinate x_in);
@@ -451,6 +452,7 @@ class cubic_spline_rbf : public radial_basis_function
 
  public:
 
+  cubic_spline_rbf(double epsilon = 1.);
   double operator() (double radius);
   double operator() (double x_in, double y_in, double z_in = 0.);
   double operator() (coordinate x_in);

@@ -91,6 +91,10 @@ coordinate radial_basis_function::show_coordinate_offset()
   return x_out;
 }
 
+gaussian_rbf::gaussian_rbf(double epsilon) : radial_basis_function(epsilon)
+{
+}
+
 double gaussian_rbf::operator() (double radius)
 {
 
@@ -358,6 +362,10 @@ double gaussian_rbf::Dxyz(coordinate x_in)
 {
 
   return this->Dxyz(x_in.x,x_in.y,x_in.z);
+}
+
+cubic_spline_rbf::cubic_spline_rbf(double epsilon) : radial_basis_function(epsilon)
+{
 }
 
 double cubic_spline_rbf::operator() (double radius)
