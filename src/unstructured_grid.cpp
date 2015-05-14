@@ -173,7 +173,14 @@ vector<int> unstructured_grid::neighbours()
 
 int unstructured_grid::neighbours_col(vector<int> *neighbours, vector<int> *length_counter)
 {
-  return findif_row_col_convert(num_nodes, &kD_tree, neighbours, length_counter);
+  if(!kD_update)
+    {
+      return findif_row_col_convert(num_nodes, &kD_tree, neighbours, length_counter);
+    }
+  else
+    {
+      throw invalid_argument("UNSTRUC_GRID: Tree needs to be updated."); 
+    }
 }
 
 double unstructured_grid::interpolate(vector<double> *output_grid, int stride, vector<double> *input_function, radial_basis_function *RBF, int knn, vector<double> *output_function)
