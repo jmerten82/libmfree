@@ -71,7 +71,7 @@ template <class T> vector<int> read_columns_from_fits_table(string fits_filename
 template <class T> void write_column_to_fits_table(string fits_filename, vector<T> *input, string column_name = "", string extension_name = "");
 
 /*
-  This routine writes all vectors in the umbreallo vector as separate columns
+  This routine writes all vectors in the umbrella vector as separate columns
   into the FITS file table. Extension name cane be specified and a vector
   with names can be provided. 
 */
@@ -317,9 +317,7 @@ template <class T> vector<int> read_columns_from_fits_table(string fits_filename
       else
 	{
 	  num_cols = index_vector.size();
-	}
-      cout <<num_cols <<endl;
-      
+	}      
       for(int i = 0; i < num_cols; i++)
 	{
 	  //We need this for conversion reasons. Not the most efficient. 
