@@ -41,6 +41,44 @@ template <class T> void write_img_to_fits(string fits_filename, vector<T> *input
 template <class T> void read_img_from_fits(string fits_filename, string extension_name = "" );
 
 /*
+  This routine reads a column from a FITS binary table. You can specify the
+  extension index, if it is not set you can specify the extensions name.
+  If both are not set, the extension with index 1 is read. See
+  CCFits documentation for conventions. The routine returns the size of
+  the output vector. The column to read is either identified by name 
+  or by its index. If none is specified, the first one is read.
+*/
+
+template <class T> int read_column_from_fits_table(string fits_filename, vector<T> *output, string column_name = "", int column_index = 1, string extension_name = "", int extension_index = 1);
+
+/*
+  This routine reads a number of FITS table columns into a vector of vectors.
+  The indices of the columns are defined by the content of the index vector.
+  If no index vector is passed, all columns are read. 
+*/
+
+template <class T> vector<int> read_columns_from_fits_table(string fits_filename, vector<vector<T> > *output, vector<int> index_vector = vector<int>(), string extension_name = "", int extension_index = 1);
+
+
+/*
+  This routine writes a column to a FITS binary table. You can specify the
+  extension index, if it is not set you can specify the extensions name.
+  If both are not set, the extension with index 1 is written to. See
+  CCFits documentation for conventions. 
+  You cam also specify the column name. 
+*/
+
+template <class T> void write_column_to_fits_table(string fits_filename, vector<T> *input, string column_name = "", string extension_name = "");
+
+/*
+  This routine writes all vectors in the umbreallo vector as separate columns
+  into the FITS file table. Extension name cane be specified and a vector
+  with names can be provided. 
+*/
+
+template <class T> void write_columns_to_fits_table(string fits_filename, vector<vector<T> > *input, vector<string> column_names = vector<string>(), string extension_name = "");
+
+/*
   Writes a header with keyword and description into the HDU of a FITS file.
   If no extenion is given, the primary HDU is written. 
 */
@@ -83,6 +121,12 @@ template<typename T> inline static int read_header_type(T *input)
 {
   return TDOUBLE;
 }
+
+template<typename T> inline static ValueType read_table_type(vector<T> *input)
+{
+  return Tdouble;
+}
+
 
 /*
   This routine takes an unstructured 2D grid and some function and places
@@ -202,6 +246,195 @@ template <class T> void read_header_from_fits(string fits_filename, string keywo
 
 }
 
+template <class T> int read_column_from_fits_table(string fits_filename, vector<T> *output, string column_name, int column_index, string extension_name, int extension_index)
+{
+
+  //Create FITS pointer and create temporary valarray
+  std::auto_ptr<FITS> pInfile(new FITS(fits_filename, Read, true));
+
+  //We need this for conversion reasons. Not the most efficient. 
+
+  valarray<T> temp;
+
+  //Opening the right table
+
+
+  if(extension_name == "")
+    {
+      ExtHDU& table =  pInfile->extension(extension_index);
+      if(column_name == "")
+	{
+	  Column& column = table.column(column_index);
+	  column.read(temp, 0, column.rows());
+	}
+      else
+	{
+	  Column& column = table.column(column_name);
+	  column.read(temp, 0, column.rows());
+	}      
+    }
+  else
+    {
+      ExtHDU& table = pInfile->extension(extension_name);
+      if(column_name == "")
+	{
+	  Column& column = table.column(column_index);
+	  column.read(temp, 0, column.rows());
+	}
+      else
+	{
+	  Column& column = table.column(column_name);
+	  column.read(temp, 0, column.rows());
+	}
+      
+    }
+  output->clear();
+  output->resize(temp.size());
+  
+  copy(&temp[0],&temp[temp.size()],output->begin());
+  
+  return temp.size();
+  
+}
+
+template <class T> vector<int> read_columns_from_fits_table(string fits_filename, vector<vector<T> > *output, vector<int> index_vector, string extension_name, int extension_index)
+{
+  //Create FITS pointer and create temporary valarray
+  std::auto_ptr<FITS> pInfile(new FITS(fits_filename, Read, true));
+
+  output->clear();
+
+  //Opening the right table
+
+  if(extension_name == "")
+    {
+      ExtHDU& table =  pInfile->extension(extension_index);
+      int num_cols;
+      if(index_vector.size() == 0)
+	{
+	  num_cols = table.numCols();
+	}
+      else
+	{
+	  num_cols = index_vector.size();
+	}
+      cout <<num_cols <<endl;
+      
+      for(int i = 0; i < num_cols; i++)
+	{
+	  //We need this for conversion reasons. Not the most efficient. 
+	  valarray<T> temp;
+	  vector<T> temp2;
+	  int index;
+	  if(index_vector.size() == 0)
+	    {
+	      index = i+1;
+	    }
+	  else
+	    {
+	      index = index_vector[i];
+	    }
+	  Column& column = table.column(index);
+	  column.read(temp, 0, column.rows());
+	  temp2.resize(temp.size());
+	  copy(&temp[0],&temp[temp.size()],temp2.begin());
+	  output->push_back(temp2);
+	}   
+    }
+  else
+    {
+      ExtHDU& table =  pInfile->extension(extension_index);
+      int num_cols;
+      if(index_vector.size() == 0)
+	{
+	  num_cols = table.numCols();
+	}
+      else
+	{
+	  num_cols = index_vector.size();
+	}
+      
+      for(int i = 0; i < num_cols; i++)
+	{
+	  //We need this for conversion reasons. Not the most efficient. 
+	  valarray<T> temp;
+	  vector<T> temp2;
+	  int index;
+	  if(index_vector.size() == 0)
+	    {
+	      index = i+1;
+	    }
+	  else
+	    {
+	      index = index_vector[i];
+	    }
+	  Column& column = table.column(index);
+	  column.read(temp, 0, column.rows());
+	  temp2.resize(temp.size());
+	  copy(&temp[0],&temp[temp.size()],temp2.begin());
+	  output->push_back(temp2);
+	}
+    }
+ 
+  vector<int> sizes;
+  for(int i = 0; i < output->size(); i++)
+    {
+      sizes.push_back((*output)[i].size());
+    }
+  return sizes; 
+}
+
+template <class T> void write_column_to_fits_table(string fits_filename, vector<T> *input, string column_name, string extension_name)
+{
+
+  std::auto_ptr<FITS> pFits(0);
+  pFits.reset( new FITS(fits_filename,Write) );
+
+  valarray<T> temp;
+  temp.resize(input->size());
+  for(int i = 0; i < input->size(); i++)
+    {
+      temp[i] = (*input)[i];
+    }  
+  Table* newTable = pFits->addTable(extension_name,input->size());
+  newTable->addColumn(read_table_type(input),column_name,1);  
+  newTable->column(column_name).write(temp,1);
+}
+
+template <class T> void write_columns_to_fits_table(string fits_filename, vector<vector<T> > *input, vector<string> column_names, string extension_name)
+{
+
+  std::auto_ptr<FITS> pFits(0);
+  pFits.reset( new FITS(fits_filename,Write) );
+
+  Table* newTable = pFits->addTable(extension_name,(*input)[0].size());
+
+  for(int i = 0; i < input->size(); i++)
+    {
+      string current_name;
+      if(column_names.size() >= input->size())
+	{
+	  current_name = column_names[i];
+	}
+      else
+	{
+	  current_name = "";
+	}
+      valarray<T> temp;
+      temp.resize((*input)[i].size());
+      for(int j = 0; j < temp.size(); j++)
+	{
+	  temp[j] = (*input)[i][j];
+	} 
+      newTable->addColumn(read_table_type(&(*input)[i]),current_name,1);  
+      newTable->column(current_name).write(temp,1);
+    }
+}
+
+
+
+
+
 /*
   Template specialisations. 
 */
@@ -216,6 +449,11 @@ template<> inline int read_header_type<float> (float *input)
   return TFLOAT;
 }
 
+template<> inline ValueType read_table_type<float> (vector<float> *input)
+{
+    return Tfloat;
+}
+
 template<> inline int read_img_type<unsigned long> (vector<unsigned long> *input)
 {
   return ULONG_IMG;
@@ -224,6 +462,11 @@ template<> inline int read_img_type<unsigned long> (vector<unsigned long> *input
 template<> inline int read_header_type<unsigned long> (unsigned long *input)
 {
   return TULONG;
+}
+
+template<> inline ValueType read_table_type<unsigned long> (vector<unsigned long> *input)
+{
+    return Tulong;
 }
 
 template<> inline int read_img_type<long> (vector<long> *input)
@@ -236,6 +479,11 @@ template<> inline int read_header_type<long> (long *input)
   return TLONG;
 }
 
+template<> inline ValueType read_table_type<long> (vector<long> *input)
+{
+    return Tlong;
+}
+
 template<> inline int read_img_type<unsigned int> (vector<unsigned int> *input)
 {
   return USHORT_IMG;
@@ -244,6 +492,11 @@ template<> inline int read_img_type<unsigned int> (vector<unsigned int> *input)
 template<> inline int read_header_type<unsigned short> (unsigned short *input)
 {
   return TUSHORT;
+}
+
+template<> inline ValueType read_table_type<unsigned short> (vector<unsigned short> *input)
+{
+    return Tushort;
 }
 
 template<> inline int read_img_type<int> (vector<int> *input)
@@ -256,6 +509,11 @@ template<> inline int read_header_type<int> (int *input)
   return TINT;
 }
 
+template<> inline ValueType read_table_type<int> (vector<int> *input)
+{
+    return Tint;
+}
+
 template<> inline int read_img_type<unsigned char> (vector<unsigned char> *input)
 {
   return BYTE_IMG;
@@ -264,6 +522,11 @@ template<> inline int read_img_type<unsigned char> (vector<unsigned char> *input
 template<> inline int read_header_type<unsigned char> (unsigned char *input)
 {
   return TBYTE;
+}
+
+template<> inline ValueType read_table_type<unsigned char> (vector<unsigned char> *input)
+{
+    return Tbyte;
 }
 
 template<> inline int read_img_type<char> (vector<char> *input)
@@ -276,6 +539,11 @@ template<> inline int read_header_type<char> (char *input)
   return TBYTE;
 }
 
+template<> inline ValueType read_table_type<char> (vector<char> *input)
+{
+    return Tbyte;
+}
+
 template<> inline int read_img_type<bool> (vector<bool> *input)
 {
   return BYTE_IMG;
@@ -285,6 +553,11 @@ template<> inline int read_header_type<bool> (bool *input)
 {
   return TBIT;
 }
+template<> inline ValueType read_table_type<bool> (vector<bool> *input)
+{
+    return Tbit;
+}
+
 
 
 template <class T> void voronoi_to_fits(unstructured_grid_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512)
