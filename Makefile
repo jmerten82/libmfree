@@ -35,8 +35,10 @@ install: $(LIBNAMESTAT)
 shared: $(LIBNAMEDYN)
 
 radial_basis_function.o:
-unstructured_grid.o: radial_basis_function.o
-grid_utils.o: unstructured_grid.o
+rbf_implementation.o: radial_basis_function.o
+mesh_free.o: radial_basis_function.o 
+mesh_free_differentiate.o: mesh_free.o
+grid_utils.o: mesh_free.o
 rwfits.o:
 rwhdf5.o:
 

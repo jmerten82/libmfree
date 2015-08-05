@@ -18,7 +18,8 @@ http://www.julianmerten.net
 #include <ctime>
 #include <cmath>
 #include <stdexcept>
-#include <mfree/unstructured_grid.h>
+#include <mfree/mesh_free.h>
+#include <mfree/mesh_free_differentiate.h>
 #include <CCfits/CCfits>
 #include <flann/flann.hpp>
 
@@ -129,7 +130,7 @@ template<typename T> inline static ValueType read_table_type(vector<T> *input)
 
 
 /*
-  This routine takes an unstructured 2D grid and some function and places
+  This routine takes a 2D mesh-free domain and some function and places
   it as a Voronoi diagram into a FITS file. The original coordinates
   are placed into a linear WCS. The dimension of the oversampled 
   output has to be given and will be applied to the larger of the
@@ -137,7 +138,7 @@ template<typename T> inline static ValueType read_table_type(vector<T> *input)
   is written instead of the primary image. 
 */
 
-template <class T> void voronoi_to_fits(unstructured_grid_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512); 
+template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512); 
 
 //Explicit definitions of the template routines
 
@@ -558,7 +559,7 @@ template<> inline ValueType read_table_type<bool> (vector<bool> *input)
 
 
 
-template <class T> void voronoi_to_fits(unstructured_grid_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512)
+template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512)
 {
   int grid_dim = grid->return_grid_size(); 
   //Initial sanity checks

@@ -12,7 +12,7 @@
 
 #include <mfree/rwhdf5.h>
 
-void write_mfree_to_hdf5(unstructured_grid *input, string filename)
+void write_mfree_to_hdf5(mesh_free *input, string filename)
 {
 
   //Creating HDF5 file
@@ -58,7 +58,7 @@ void write_mfree_to_hdf5(unstructured_grid *input, string filename)
 }
 
 
-void read_mfree_from_hdf5(string filename, unstructured_grid *output)
+void read_mfree_from_hdf5(string filename, mesh_free *output)
 {
   //WORK TO BE DONE
 

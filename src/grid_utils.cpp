@@ -12,7 +12,7 @@ http://www.julianmerten.net
 
 #include <mfree/grid_utils.h>
 
-void grid_sampling(unstructured_grid *big_grid, unstructured_grid *small_grid, int rng_seed)
+void grid_sampling(mesh_free *big_grid, mesh_free *small_grid, int rng_seed)
 {
 
   int big_grid_size = big_grid->return_grid_size();

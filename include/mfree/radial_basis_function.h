@@ -2,6 +2,9 @@
 This abstract class provides a radial basis functions and its
 derivatives up to third order. The functions are hard-wired
 due to the fact that we analytically implement the derivatives.
+
+The classes here are base classes. Explicit RBFs are defined elsewhere
+but inherit the functionality of the base classes. 
  
 Julian Merten
 Universiy of Oxford
@@ -13,7 +16,6 @@ http://www.julianmerten.net
 #ifndef    RADIAL_BASIS_FUNCTIONS_H
 #define    RADIAL_BASIS_FUNCTIONS_H
 
-#include <cmath>
 #include <stdexcept>
 
 using namespace std;
@@ -44,32 +46,32 @@ class radial_basis_function
  protected:
 
   /*
-    The shape parameter of the radial basis function.
-  */
-
-  double epsilon;
-
-  /*
     The original of the radial basis funtions's coordinate system. Can
     be seen also as an offset of the coordinate system. 
   */
 
   double x_0, y_0, z_0;
 
-  /*
-    Constants often used in the differentiation.
-  */
-
-  double Etwo, Efour, Esix, twoEtwo, fourEfour,threeEfour, eightEfour, nineEfour, twentyfourEfour, eightEsix, fifteenEsix,fortyeightEsix;
-
  public:
 
   /*
-    Standard constructor. Needs the type and the epsilon value. If not 
-    given they are set to default values.
+    Standard constructor. Does nothing but setting the origin to the input
+    or 0.
   */ 
 
-  radial_basis_function(double epsilon = 1.);
+ radial_basis_function(double x = 0., double y = 0., double z = 0.) : x_0(x), y_0(y), z_0(z){};
+
+  /*
+    Another constructor, using a coordinate structure.
+  */
+
+ radial_basis_function(coordinate input) : x_0(input.x), y_0(input.y), z_0(input.z){};
+
+  /*
+    Copy constructor.
+  */
+
+ radial_basis_function(radial_basis_function &input) : x_0(input.x_0), y_0(input.y_0), z_0(input.z_0){};
 
   /*
     Standard destructor. In fact, does nothing.
@@ -77,18 +79,6 @@ class radial_basis_function
 
   ~radial_basis_function();
 
-  /*
-    Here you can set the epsilon or also also called shape parameter
-    of the radial basis function.
-  */
-
-  void set_epsilon(double epsilon_in);
-
-  /*
-    Returns the shape parameter the radial basis function is currently set to. 
-  */
-
-  double show_epsilon();
 
   /*
     Here you can set the coordinate origin of the radial basis 
@@ -381,119 +371,92 @@ class radial_basis_function
 
 };
 
-/**
-   A Gaussian radial basis function implementing
-   \phi(r) = Exp(-(\epsilon*r)^2)
-**/
-
-class gaussian_rbf : public radial_basis_function
-{
-
-  /*
-    See base class radial_basis function for explanation. 
-  */
- public:
-
-  gaussian_rbf(double epsilon = 1.);
-  double operator() (double radius);
-  double operator() (double x_in, double y_in, double z_in = 0.);
-  double operator() (coordinate x_in);
-  double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dx(coordinate x_in);
-  double Dy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dy(coordinate x_in);
-  double Dz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dz(coordinate x_in);
-  double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxx(coordinate x_in);
-  double Dyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyy(coordinate x_in);
-  double Dzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dzz(coordinate x_in);
-  double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxy(coordinate x_in);
-  double Dxz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxz(coordinate x_in);
-  double Dyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyz(coordinate x_in);
-  double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxx(coordinate x_in);
-  double Dyyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyyy(coordinate x_in);
-  double Dzzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dzzz(coordinate x_in);
-  double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxy(coordinate x_in);
-  double Dxxz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxz(coordinate x_in);
-  double Dyyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyyz(coordinate x_in);
-  double Dxyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxyy(coordinate x_in);
-  double Dxzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxzz(coordinate x_in);
-  double Dyzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyzz(coordinate x_in);
-  double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxyz(coordinate x_in);
-};
 
 /**
-   A cubic spline radial basis function implementing
-   \phi(r) = r^3
-
+   The second RBF base class, which additionally allows for 
+   a shape parameter in the RBF.
 **/
 
-class cubic_spline_rbf : public radial_basis_function
+class radial_basis_function_shape : public radial_basis_function
 {
+
+ protected:
+
   /*
-    See base class for function explanations.
+    The shape parameter of the radial basis function.
   */
+
+  double epsilon;
+
 
  public:
 
-  cubic_spline_rbf(double epsilon = 1.);
-  double operator() (double radius);
-  double operator() (double x_in, double y_in, double z_in = 0.);
-  double operator() (coordinate x_in);
-  double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dx(coordinate x_in);
-  double Dy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dy(coordinate x_in);
-  double Dz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dz(coordinate x_in);
-  double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxx(coordinate x_in);
-  double Dyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyy(coordinate x_in);
-  double Dzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dzz(coordinate x_in);
-  double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxy(coordinate x_in);
-  double Dxz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxz(coordinate x_in);
-  double Dyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyz(coordinate x_in);
-  double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxx(coordinate x_in);
-  double Dyyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyyy(coordinate x_in);
-  double Dzzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dzzz(coordinate x_in);
-  double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxy(coordinate x_in);
-  double Dxxz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxxz(coordinate x_in);
-  double Dyyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyyz(coordinate x_in);
-  double Dxyy(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxyy(coordinate x_in);
-  double Dxzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxzz(coordinate x_in);
-  double Dyzz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dyzz(coordinate x_in);
-  double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
-  double Dxyz(coordinate x_in);
+  /*
+    Standard constructor, setting origin and shape to 0.
+  */
+
+ radial_basis_function_shape(double x = 0., double y = 0., double z = 0., double shape = 0.) : radial_basis_function(x,y,z), epsilon(shape) {};
+
+  /*
+    Standard constructor using a coordinate structure instead. 
+  */
+
+  radial_basis_function_shape(coordinate input, double shape = 0.) : radial_basis_function(input),  epsilon(shape) {};
+
+  /*
+    Copy constructor.
+  */
+
+ radial_basis_function_shape(radial_basis_function_shape &input) : radial_basis_function(input.show_coordinate_offset()), epsilon(input.epsilon) {};
+
+  /*
+    Destructor doing nothing.
+  */
+
+  ~radial_basis_function_shape() {};
+
+
+  /*
+    Here you can set the epsilon or also also called shape parameter
+    of the radial basis function.
+  */
+
+  virtual void set_epsilon(double epsilon_in);
+
+  /*
+    Returns the shape parameter the radial basis function is currently set to. 
+  */
+
+  double show_epsilon();
+
+  /*
+    Increment operator which increases the shape parameter of the 
+    RBF by a double value. 
+  */
+
+  virtual void operator += (double input);
+
+  /*
+    Decrement operator which decreases the shape parameter of the 
+    RBF by a double value. 
+  */
+
+  virtual void operator -= (double input);
+
+  /*
+    Multiplication operator which multiplies the shape parameter of the 
+    RBF with a double value. 
+  */
+
+  virtual void operator *= (double input);
+
+  /*
+    Division operator which divides the shape parameter of the 
+    RBF with a double value. 
+  */
+
+  virtual void operator /= (double input);
+
 };
 
 #endif    /*RADIAL_BASIS_FUNCTIONS_H*/

@@ -18,7 +18,7 @@ jmerten@caltech.edu
 #include <fstream>
 #include <string>
 #include <gsl/gsl_rng.h>
-#include <mfree/unstructured_grid.h>
+#include <mfree/mesh_free.h>
 #include <flann/flann.hpp>
 
 using namespace std;
@@ -30,7 +30,7 @@ using namespace std;
   generator can be given, if not it is seeded with the system time.
 */
 
-void grid_sampling(unstructured_grid *big_grid, unstructured_grid *small_grid, int rng_seed = -1);
+void grid_sampling(mesh_free *big_grid, mesh_free *small_grid, int rng_seed = -1);
 
 
 /**

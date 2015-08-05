@@ -18,7 +18,7 @@
 #include <cmath>
 #include <hdf5.h>
 #include <H5Cpp.h>
-#include <mfree/unstructured_grid.h>
+#include <mfree/mesh_free.h>
 
 #ifndef H5_NO_NAMESPACE
     using namespace H5;
@@ -29,13 +29,13 @@
   into an HDF5 file. 
 */
 
-void write_mfree_to_hdf5(unstructured_grid *input, string filename);
+void write_mfree_to_hdf5(mesh_free *input, string filename);
 
 /*
   Reads a meshfree HDF5 file and returns a new unstructured grid;
 */
 
-void  read_mfree_from_hdf5(string filename, unstructured_grid *output);
+void  read_mfree_from_hdf5(string filename, mesh_free *output);
 
 
 
