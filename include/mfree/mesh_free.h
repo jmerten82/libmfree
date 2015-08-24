@@ -243,13 +243,34 @@ class mesh_free
 
   /*
     Returns the column inverted set of neighbours, which is needed
-    to perfrom summing operations which run over columns as the fast index.
+    to perform summing operations which run over columns as the fast index.
     The length of this summation can be found by dividing the total size
     of this vector by the number of grid nodes. The length counter
     contains for each column the number of non-zero elements.
   */
 
   int neighbours_col(vector<int> *neighbours, vector<int> *length_counter, int nearest_neighbours = 16);
+
+  /*
+    This routine takes another mesh-free structure, checks if dimensionalities
+    match and embeds this strcuture in the existing grid. This means
+    that it searches the knn nearest neighbours of all nodes of the input
+    grid in the current grid and returns a vector with their indices. 
+    If the respective vector is provided, also the L2 distances are
+    written out. 
+  */
+
+  vector<int> embed(mesh_free *input, int knn = 16);
+
+  /*
+    Overloaded version of the embed function. This one takes directly 
+    a coordinate vector. The problem with this approach is that it might 
+    not be dimensionality safe. A stride between coorindate tuples can be
+    provided. If not it assumes it to be the dimensionality of the current grid.
+  */
+
+  vector<int> embed(vector<double> *input, int knn = 16, int stride = 0);
+
 
   /*
     This routines uses a given radial basis function to interpolate an input function on a mesh free domain

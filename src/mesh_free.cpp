@@ -480,6 +480,103 @@ int mesh_free::neighbours_col(vector<int> *neighbours, vector<int> *length_count
   
 }
 
+vector<int> mesh_free::embed(mesh_free *input, int knn)
+{
+
+  int ref_nodes = input->return_grid_size();
+
+  vector<double> distances;
+  distances.resize(ref_nodes*knn);
+
+  vector<int> output;
+  output.resize(ref_nodes*knn);
+
+
+  if(input->return_grid_size(1) != dim)
+    {
+      throw invalid_argument("M_FREE: Dimensions must match for embed operation.");
+    }
+
+  vector<double> ref_coordinates;
+
+  for(int i = 0; i < ref_nodes; i++)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  ref_coordinates.push_back((*input)(i,j));
+	}
+    }
+
+  
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<int> flann_tree(&output[0],ref_nodes,knn);
+  flann::Matrix<double> flann_distances(&distances[0],ref_nodes,knn);
+  flann::Matrix<double> flann_coordinates(&ref_coordinates[0],ref_nodes,dim);
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  
+  
+  //Performing flann nearest neighbours search
+  index.knnSearch(flann_coordinates, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  return output;
+}
+
+vector<int> mesh_free::embed(vector<double> *input, int knn, int stride)
+{
+
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  if(input->size() < dim)
+    {
+      throw invalid_argument("M_FREE: Input coordinate vector too short for embed.");
+    }
+
+  int ref_nodes = floor((double) input->size() / (double) stride);
+  if(ref_nodes == 0)
+    {
+      ref_nodes++;
+    }
+
+
+  vector<double> distances;
+  distances.resize(ref_nodes*knn);
+
+
+  vector<int> output;
+  output.resize(ref_nodes*knn);
+
+
+  vector<double> ref_coordinates;
+
+  for(int i = 0; i < input->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  ref_coordinates.push_back((*input)[i+j]);
+	}
+    }
+
+  
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<int> flann_tree(&output[0],ref_nodes,knn);
+  flann::Matrix<double> flann_distances(&distances[0],ref_nodes,knn);
+  flann::Matrix<double> flann_coordinates(&ref_coordinates[0],ref_nodes,dim);
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  
+  
+  //Performing flann nearest neighbours search
+  index.knnSearch(flann_coordinates, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  return output;
+}
+
+
+
 double mesh_free::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, int knn, int stride)
 {
 
