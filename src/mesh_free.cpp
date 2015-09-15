@@ -78,7 +78,7 @@ mesh_free mesh_free::operator + (mesh_free &input)
 {
   if(dim != input.return_grid_size(1))
     {
-      throw invalid_argument("MFREE: Cannot add two mesh-free object of differing dimensionality.");
+      throw invalid_argument("MFREE: Cannot add two mesh-free objects of differing dimensionality.");
     }
 
   vector<double> out_coords;
@@ -129,33 +129,40 @@ mesh_free mesh_free::operator - (mesh_free &input)
 
   if(dim != input.return_grid_size(1))
     {
-      throw invalid_argument("MFREE: Cannot subract two mesh-free object of differing dimensionality.");
+      throw invalid_argument("MFREE: Cannot subract two mesh-free objects of differing dimensionality.");
     }
 
-  vector<double> coords_out;
+  vector<double> coords_input;
+  for(int j = 0; j < input.return_grid_size(0); j++)
+    {
+      for(int d = 0; d < dim; d++)
+	{
+	  coords_input.push_back(input(j,d));
+	}
+    }
 
+  vector<int> tree;
+  tree.resize(num_nodes);
+  vector<double> distances;
+  distances.resize(num_nodes);
+  flann::Matrix<double> flann_search(&coordinates[0],num_nodes,dim);
+  flann::Matrix<int> flann_tree(&tree[0],num_nodes,1);
+  flann::Matrix<double> flann_distances(&distances[0],num_nodes,1);
+  flann::Matrix<double> flann_dataset(&coords_input[0],input.return_grid_size(0),dim);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_search, flann_tree, flann_distances, 1, flann::SearchParams(128));
+
+
+  vector<double> coords_out;
   for(int i = 0; i < num_nodes; i++)
     {
-      bool add = true;
-      for(int j = 0; j < input.return_grid_size(0); j++)
+      if(distances[i] != 0.0)
 	{
-	  for(int d = 0; d < dim; d++)
+	  for(int j = 0; j < dim; j++)
 	    {
-	      if(!add && coordinates[i*dim+d] != input(j,d))
-		{
-		  add = true;
-		}
-	      else
-		{
-		  add = false;
-		}
-	    }
-	}
-      if(add)
-	{
-	  for(int d = 0; d < dim; d++)
-	    {
-	      coords_out.push_back(coordinates[i*dim+d]);
+	      coords_out.push_back((*this)(i,j));
 	    }
 	}
     }
@@ -169,36 +176,44 @@ void mesh_free::operator -= (mesh_free &input)
 
   if(dim != input.return_grid_size(1))
     {
-      throw invalid_argument("MFREE: Cannot subract two mesh-free object of differing dimensionality.");
+      throw invalid_argument("MFREE: Cannot subtract two mesh-free object of differing dimensionality.");
     }
+
+  vector<double> coords_input;
+  for(int j = 0; j < input.return_grid_size(0); j++)
+    {
+      for(int d = 0; d < dim; d++)
+	{
+	  coords_input.push_back(input(j,d));
+	}
+    }
+
+  vector<int> tree;
+  tree.resize(num_nodes);
+  vector<double> distances;
+  distances.resize(num_nodes);
+  flann::Matrix<double> flann_search(&coordinates[0],num_nodes,dim);
+  flann::Matrix<int> flann_tree(&tree[0],num_nodes,1);
+  flann::Matrix<double> flann_distances(&distances[0],num_nodes,1);
+  flann::Matrix<double> flann_dataset(&coords_input[0],input.return_grid_size(0),dim);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_search, flann_tree, flann_distances, 1, flann::SearchParams(128));
+
 
   vector<double> coords_out;
-
   for(int i = 0; i < num_nodes; i++)
     {
-      bool add = true;
-      for(int j = 0; j < input.return_grid_size(0); j++)
+      if(distances[i] != 0.0)
 	{
-	  for(int d = 0; d < dim; d++)
+	  for(int j = 0; j < dim; j++)
 	    {
-	      if(!add && coordinates[i*dim+d] != input(j,d))
-		{
-		  add = true;
-		}
-	      else 
-		{
-		  add = false;
-		}
-	    }
-	}
-      if(add)
-	{
-	  for(int d = 0; d < dim; d++)
-	    {
-	      coords_out.push_back(coordinates[i*dim+d]);
+	      coords_out.push_back((*this)(i,j));
 	    }
 	}
     }
+
   coordinates.clear();
   coordinates = coords_out;
   num_nodes = coordinates.size()/dim;
