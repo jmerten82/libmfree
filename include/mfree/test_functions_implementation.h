@@ -54,5 +54,59 @@ class bengts_function : public test_function
 
 };
 
+/**
+   This class implements the 2D version of the NFW lensing potential. 
+   It needs one parameter, which is the scale convergence. We follow
+   here the defintion of the lensing notes by Massimo Meneghetti:
+   \psi(r) = 4*\kappa_s*g(r), where
+   g(r) = 0.5*ln^2(r/2) + h(r), where 
+   h(r) = 2*arctan^2(sqrt(r-1/r+1)) for (x > 1)
+   h(r) = -2*arctanh^2(sqrt(1-r/1+r)) for (x < 1)
+   h(r) = 0 for(r = 1)
+**/
+
+class nfw_lensing_potential : public test_function
+{
+
+ protected:
+
+  /*
+    The one free paramater of the radially symmetric function, the
+    scale convergence. 
+  */
+  double scale_convergence;
+
+ public:
+
+  /*
+    Standard constructor. Needs the scale convergence and the coordinate
+    offset. 
+  */
+
+  nfw_lensing_potential(double k_s_in = 1.0, vector<double> coordinates = vector<double>());
+
+  /*
+    This returns the potential at a specific coordinate.
+  */
+
+  double operator() (vector<double> coordinates);
+
+  /*
+    This returns the potential at a specific radius.
+  */
+
+  double operator() (double radius);
+
+  /*
+    The current implementation of the derivatives. Currently 
+    available are:
+    x
+    y
+    Laplace (this one actually returns 1/2 the Laplace)
+  */
+
+  double D(vector<double> coordinates, string selection = "x");
+}; 
+
 
 #endif    /*TEST_FUNCTIONS_I_H*/

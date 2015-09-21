@@ -31,7 +31,7 @@ class test_function
   int dim;
 
   /*
-    A vector holding a possible coorindate offset in each dimensions. 
+    A vector holding a possible coordinate offset in each dimensions. 
     By default this vector should be a series of 0s with length dim.
   */
 
