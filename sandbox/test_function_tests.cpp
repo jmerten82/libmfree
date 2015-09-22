@@ -39,7 +39,10 @@ int main()
 
 
   bengts_function test1;
-  nfw_lensing_potential test2;
+  vector<double> new_coords;
+  new_coords.push_back(0.25);
+  new_coords.push_back(-0.25);
+  nfw_lensing_potential test2(5.0,new_coords);
   vector<double> coordinates;
   coordinates.resize(2);
 

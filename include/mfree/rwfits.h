@@ -586,6 +586,8 @@ template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function,
   x_length = x_max - x_min;
   y_length = y_max - y_min;
   ratio = x_length/y_length;
+
+  cout <<ratio <<endl;
   
   int x_dim, y_dim;
   if(ratio > 1.0)
@@ -658,12 +660,12 @@ template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function,
 
   if(extension == "")
     {
-      write_img_to_fits(filename, &out);
+      write_img_to_fits(filename, &out,"",x_dim,y_dim);
       add_WCS_to_fits(filename,WCS,"linear");
     }
   else
     {
-      write_img_to_fits(filename, &out,extension);
+      write_img_to_fits(filename, &out,extension,x_dim,y_dim);
       add_WCS_to_fits(filename,WCS,"linear",extension);
     }
 }
