@@ -586,8 +586,6 @@ template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function,
   x_length = x_max - x_min;
   y_length = y_max - y_min;
   ratio = x_length/y_length;
-
-  cout <<ratio <<endl;
   
   int x_dim, y_dim;
   if(ratio > 1.0)
