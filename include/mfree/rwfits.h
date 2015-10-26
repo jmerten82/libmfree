@@ -142,7 +142,7 @@ template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function,
 
 //Explicit definitions of the template routines
 
-template <class T> void write_img_to_fits(string fits_filename, vector<T> *input, string extension_name = "", int x_dim = 0, int y_dim = 0)
+template <class T> void write_img_to_fits(string fits_filename, vector<T> *input, string extension_name, int x_dim, int y_dim)
 {
 
   //Creating image dimensions
@@ -188,7 +188,7 @@ template <class T> void write_img_to_fits(string fits_filename, vector<T> *input
     } 
 }
 
-template <class T> void read_img_from_fits(string fits_filename, vector<T> *output,  string extension_name = "" )
+template <class T> void read_img_from_fits(string fits_filename, vector<T> *output,  string extension_name)
 {
 
   //Create FITS pointer and create temporary valarray
@@ -213,7 +213,7 @@ template <class T> void read_img_from_fits(string fits_filename, vector<T> *outp
 
 }
 
-template <class T> void write_header_to_fits(string fits_filename, string keyword, T input, string extension_name = "", string description= "")
+template <class T> void write_header_to_fits(string fits_filename, string keyword, T input, string extension_name, string description)
 {
   std::auto_ptr<FITS> img(0);
 
@@ -229,7 +229,7 @@ template <class T> void write_header_to_fits(string fits_filename, string keywor
     }
 }
 
-template <class T> void read_header_from_fits(string fits_filename, string keyword,  T *output, string extension_name = "")
+template <class T> void read_header_from_fits(string fits_filename, string keyword,  T *output, string extension_name)
 {
   std::auto_ptr<FITS> pInfile(new FITS(fits_filename, Read, true));
 
@@ -559,7 +559,7 @@ template<> inline ValueType read_table_type<bool> (vector<bool> *input)
 
 
 
-template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function, string filename, string extension = "", int dim = 512)
+template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function, string filename, string extension, int dim)
 {
   int grid_dim = grid->return_grid_size(); 
   //Initial sanity checks
