@@ -39,7 +39,7 @@ template <class T> void write_img_to_fits(string fits_filename, vector<T> *input
   If no extenion is given, the primary HDU is read. 
 */
 
-template <class T> void read_img_from_fits(string fits_filename, string extension_name = "" );
+template <class T> void read_img_from_fits(string fits_filename,vector<T> *output, string extension_name = "" );
 
 /*
   This routine reads a column from a FITS binary table. You can specify the
