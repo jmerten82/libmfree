@@ -414,7 +414,6 @@ void mesh_free::write_ASCII(string filename, bool col_description)
 	    }
 	}
     }
-  cout <<endl;
   output.close();
 
 
