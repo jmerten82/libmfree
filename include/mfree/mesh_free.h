@@ -242,6 +242,13 @@ class mesh_free
   vector<int> neighbours(int nearest_neighbours = 16);
 
   /*
+    Same as above but return the full set of distances to the 
+    neighbours. 
+  */
+
+  vector<double> distances(int nearest_neighbours = 16);
+
+  /*
     Returns the column inverted set of neighbours, which is needed
     to perform summing operations which run over columns as the fast index.
     The length of this summation can be found by dividing the total size

@@ -482,6 +482,15 @@ vector<int> mesh_free::neighbours(int nearest_neighbours)
   return kD_tree;
 }
 
+vector<double> mesh_free::distances(int nearest_neighbours)
+{
+  if(kD_update)
+    {
+      build_tree(nearest_neighbours);
+    }
+  return distances;
+}
+
 int mesh_free::neighbours_col(vector<int> *neighbours, vector<int> *length_counter, int nearest_neighbours)
 {
 
