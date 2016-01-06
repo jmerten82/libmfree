@@ -316,3 +316,159 @@ vector<double> build_unit_grid(double pixel_size, bool spare_centre)
 
   return out;
 }
+
+vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials = vector<string>(), int refinements, int steps, string verbose_mode)
+{
+  bool verbose = 0;
+
+  double eps_save = rbf_in->show_epsilon();
+
+  if(verbose_mode != "")
+    {
+      verbose = 1;
+    }
+
+  ofstream out_log;
+
+  if(verbose)
+    {
+      out_log.open(verbose_mode.c_str());
+    }
+
+  //Problem dimension
+  int dim = mesh_free_in->return_grid_size();
+
+  //Getting the distances from the mesh. This makes sure that tree is created. 
+
+  vector<double> distances = mesh_free_in->provide_distances();
+  int stride = distances.size() / dim;
+
+  //Finding minimum nn distance with gsl vector views
+  gsl_vector_view minimum_dists = gsl_vector_view_array_with_stride (&distances[1],stride,dim);
+  double min_dist = gsl_vector_min(&minimum_dists.vector);  
+ 
+  //Finding maximum grid distance with the help of the convex hull
+  vector<Point_2> cgal_mesh;
+  vector<Point_2> cgal_chull;
+
+  for(int i = 0; i < dim; i++)
+    {
+      cgal_mesh.push_back(Point_2((*mesh_free_in)(i,0),(*mesh_free_in)(i,1)));
+    }
+  CGAL::convex_hull_2(cgal_mesh.begin(), cgal_mesh.end(), std::back_inserter(cgal_chull) );
+  int dim2 = cgal_chull.size();
+  double max_dist = 0.;
+  for(int i = 0; i < dim2-1; i++)
+    {
+      for(int j = i; j < dim2; j++)
+	{
+	  double current_dist = pow(cgal_chull[i][0]-cgal_chull[j][0],2) + pow(cgal_chull[i][1]-cgal_chull[j][1],2);
+	  if(current_dist > max_dist)
+	    {
+	      max_dist = current_dist;
+	    }
+	}
+    } 
+
+  min_dist = sqrt(min_dist);
+  max_dist = sqrt(max_dist);
+
+  double eps_start_save = 1./max_dist;
+  double eps_stop_save = 1./min_dist;
+  double step_save = (eps_stop_save-eps_start_save)/steps;
+
+  vector<double> base_function;
+  vector<vector<double> > base_coords;
+  for(int i = 0; i < dim; i++)
+    {
+      vector<double> coords;
+      coords = (*mesh_free_in)(i);
+      base_coords.push_back(coords);
+      base_function.push_back((*test_function_in)(coords));
+    }
+
+
+  double final_eps;
+  vector<double> output;
+
+  for(int diffs = 0; diffs < differentials.size(); diffs++)
+    {
+      double eps_start = eps_start_save;
+      double eps_stop = eps_stop_save;
+      double step = step_save;
+      double main_index = 0;
+      ofstream out_log;
+      if(verbose)
+	{
+	  string out_file = verbose_mode + "_" + differentials[diffs] + ".dat";
+	  out_log.open(out_file.c_str());
+	  out_log <<"#Minimum distance on grid: " <<min_dist <<endl;
+	  out_log <<"#Maximum distance on grid: " <<max_dist <<endl;
+	  out_log <<"#epsilon condition avg_error max_error" <<endl;
+	}
+
+      while(main_index <= refinements)
+	{
+	  cout <<main_index <<endl;
+	  vector<double> epsilons, avg_errors, max_errors, conditions;
+	  for(double eps = eps_start; eps <= eps_stop; eps += step)
+	    {
+	      vector<double> difference_vector;
+	      double condition;
+	      rbf_in->set_epsilon(eps);
+	      vector<double> current_diff_out;
+	      condition = mesh_free_in->differentiate(&base_function,differentials[diffs],rbf_in, &current_diff_out);
+	      for(int i = 0; i < dim; i++)
+		{
+		  double current_real = test_function_in->D(base_coords[i],differentials[diffs]);
+		  difference_vector.push_back(abs((current_diff_out[i]-current_real)/current_real));
+		} //End of all nodes loop
+
+	      double avg_error = gsl_stats_mean(&difference_vector[0],1,difference_vector.size());
+	      avg_errors.push_back(avg_error);
+	      vector<double>::iterator max_iterator;
+	      max_iterator = max_element(difference_vector.begin(),difference_vector.end());
+	      max_errors.push_back(*max_iterator);
+	      epsilons.push_back(eps);
+	      conditions.push_back(condition);
+	      if(verbose)
+		{
+		  out_log <<eps <<"\t" <<condition <<"\t" <<avg_error <<"\t" <<*max_iterator <<endl;
+		}
+	    } //End of eps loop
+
+	  vector<double>::iterator best_eps_error;
+	  best_eps_error = min_element(avg_errors.begin(),avg_errors.end());
+	  int best_eps_index = distance(avg_errors.begin(),best_eps_error);
+	  if(best_eps_index > 0)
+	    {
+	      eps_start = epsilons[best_eps_index-1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[0];
+	    }
+	  if(best_eps_index < epsilons.size()-1)
+	    {
+	      eps_stop = epsilons[best_eps_index+1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[epsilons.size()-1];
+	    }
+	  step = (eps_stop-eps_start)/steps; 
+	  
+	  final_eps = epsilons[best_eps_index];    
+	  main_index++;
+	} //End of all refinements loop 
+      if(verbose)
+	{
+	  out_log.close();
+	}
+      output.push_back(final_eps);
+    } //End of run over all derivatives
+
+  rbf_in->set_epsilon(eps_save);
+  return output;
+}
+

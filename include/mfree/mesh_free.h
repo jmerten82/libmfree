@@ -246,7 +246,7 @@ class mesh_free
     neighbours. 
   */
 
-  vector<double> distances(int nearest_neighbours = 16);
+  vector<double> provide_distances(int nearest_neighbours = 16);
 
   /*
     Returns the column inverted set of neighbours, which is needed

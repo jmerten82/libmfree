@@ -17,11 +17,21 @@ jmerten@caltech.edu
 #include <stdexcept>
 #include <fstream>
 #include <string>
+#include <algorithm>
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_statistics.h>
 #include <mfree/mesh_free.h>
+#include <mfree/mesh_free_differentiate.h>
+#include <mfree/radial_basis_function.h>
+#include <mfree/test_functions.h>
 #include <flann/flann.hpp>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/convex_hull_2.h>
 
 using namespace std;
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef K::Point_2 Point_2;
 
 /*
   This routine fills the entries of the smaller grid
@@ -110,6 +120,17 @@ class coordinate_grid
 */
 
 vector<double> build_unit_grid(double pixel_size, bool spare_centre); 
+
+/*
+  This helper function optimises the shape parameter of a mesh-free
+  RBF to provide optimal derivative performance based on a provided 
+  test function. You can provide a vector of derivative orders and 
+  for each a shape parameter is provided in the output vector.
+  If a verbose-mode filename is set, the resuls from the optimisation 
+  process are written to ASCII.
+*/
+
+vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials, int refinements = 1, int steps = 100, string verbose_mode = "");
 
 
 

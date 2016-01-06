@@ -213,7 +213,7 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
 	}
     }
 
-  if(selection == "Laplace")
+  else if(selection == "Laplace")
     {
       value *= 0.5;
       if(radius < 1.)
@@ -228,6 +228,11 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
 	{
 	  value *= 1./3.; 
 	}
+    }
+
+  else
+    {
+      throw invalid_argument("Invalid selection for test function D");
     }
 
   return value;

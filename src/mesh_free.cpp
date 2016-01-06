@@ -482,7 +482,7 @@ vector<int> mesh_free::neighbours(int nearest_neighbours)
   return kD_tree;
 }
 
-vector<double> mesh_free::distances(int nearest_neighbours)
+vector<double> mesh_free::provide_distances(int nearest_neighbours)
 {
   if(kD_update)
     {
