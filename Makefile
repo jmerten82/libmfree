@@ -5,14 +5,14 @@ MFREEOBS	= ./obs
 MFREEINC 	= ./include/	
 DRIVER 		= 
 CC 		= g++
-CCFLAGS		= -fPIC
+CCFLAGS		= -fPIC -frounding-math
 GSLINC 		= /usr/local/include
 CCFITSINC	= /usr/local/include
 HDF5INC		= /usr/local/include
 ADDINC 		= -I$(MFREEINC) -I$(GSLINC) -I$(CFITSIOINC) -I$(CCFITSINC) -I$(HDF5INC)
 SRC 		= $(wildcard $(MFREESRC)/*.cpp)
 OBJ		= $(SRC:$(MFREESRC)/%.cpp=$(MFREEOBS)/%.o)
- 
+
 
 .PHONY: clean distclean doc	
 

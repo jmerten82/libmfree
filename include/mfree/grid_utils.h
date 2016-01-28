@@ -132,6 +132,14 @@ vector<double> build_unit_grid(double pixel_size, bool spare_centre);
 
 vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials, int refinements = 1, int steps = 100, string verbose_mode = "");
 
+/*
+  This function is equivalent to the differentiation optimisation but optimises
+  the inteprolation instead. Since this will depend on the current mesh-free
+  layout and the target one, it needs to meshes to operate on. 
+*/
+
+double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn = 16, string test_function_switch = "", int refinements = 1, int steps = 100, string verbose_mode = "");
+
 
 
 #endif    /*GRID_UTILS_H*/
