@@ -288,6 +288,15 @@ class mesh_free
   */
 
   double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, int knn = 16, int stride = 0);
+
+  /*
+    This is another inteproaltion routines which allows for a separate shape 
+    parameter for each output node.
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
+
+
 };
 
 

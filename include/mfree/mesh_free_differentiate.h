@@ -66,6 +66,13 @@ class mesh_free_differentiate : public mesh_free
   virtual double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF) = 0;
 
   /*
+    The same function as above but with a shaped RBF and with a varying
+    shape parameter.
+  */
+
+  virtual double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter) = 0;
+
+  /*
     Creates the finite differencing weights for specific differential 
     operators. The difference to the routine before is that this
     is the column ordered version which is used for summing operations
@@ -94,7 +101,15 @@ class mesh_free_differentiate : public mesh_free
   */
 
   vector<double> create_finite_differences_weights_col(string selection, radial_basis_function *RBF, int max_length);
- 
+
+  /*
+    Again the same function as above but for a shaped RBF with varying 
+    shape parameter.
+  */
+
+  vector<double> create_finite_differences_weights_col(string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length);
+
+
 
   /*
     Performs a derivative operation on a vector and returns the derivative. 
@@ -118,6 +133,20 @@ class mesh_free_differentiate : public mesh_free
 
   double differentiate(vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out);
 
+  /*
+    This is another differentiate function which uses a RBF with shape
+    and adaptive shape parameter.
+  */
+
+  double differentiate(vector<double> *in, string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, vector<double> *out);
+
+  /*
+    This version of the differentiation routine does not calculate derivatives
+    on the existing mesh-free domain, but for a specific set of target
+    coordinates that has to be provided.
+  */
+
+  virtual double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn = 16) = 0;
 
 };
 
@@ -159,6 +188,22 @@ class mesh_free_1D : public mesh_free_differentiate
   */ 
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF);
+
+  /*
+    This version of the differentiation uses an RBF with shape parameter
+    and a spatially varying one. 
+  */
+
+  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This version of the differentiation routine does not calculate derivatives
+    on the existing mesh-free domain, but for a specific set of target
+    coordinates that has to be provided.
+  */
+
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn = 16);
+
 
 };
 
@@ -216,7 +261,20 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF);
 
+  /*
+    This version of the differentiation uses an RBF with shape parameter
+    and a spatially varying one. 
+  */
 
+  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This version of the differentiation routine does not calculate derivatives
+    on the existing mesh-free domain, but for a specific set of target
+    coordinates that has to be provided.
+  */
+
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
 };
 
@@ -263,6 +321,21 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF);
+
+  /*
+    This version of the differentiation uses an RBF with shape parameter
+    and a spatially varying one. 
+  */
+
+  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This version of the differentiation routine does not calculate derivatives
+    on the existing mesh-free domain, but for a specific set of target
+    coordinates that has to be provided.
+  */
+
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
 };
 
