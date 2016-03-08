@@ -197,6 +197,12 @@ class mesh_free_1D : public mesh_free_differentiate
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
+    This line is needed because of function hiding in derived classes. 
+  */ 
+
+  using mesh_free_differentiate::differentiate;
+
+  /*
     This version of the differentiation routine does not calculate derivatives
     on the existing mesh-free domain, but for a specific set of target
     coordinates that has to be provided.
@@ -268,6 +274,13 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
 
+
+  /*
+    This line is needed because of function hiding in derived classes. 
+  */ 
+
+  using mesh_free_differentiate::differentiate;
+
   /*
     This version of the differentiation routine does not calculate derivatives
     on the existing mesh-free domain, but for a specific set of target
@@ -328,6 +341,12 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This line is needed because of function hiding in derived classes. 
+  */ 
+
+  using mesh_free_differentiate::differentiate;
 
   /*
     This version of the differentiation routine does not calculate derivatives

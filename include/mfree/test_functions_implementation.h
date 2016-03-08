@@ -108,5 +108,44 @@ class nfw_lensing_potential : public test_function
   double D(vector<double> coordinates, string selection = "x");
 }; 
 
+/**
+
+   This implements a 16 parameter function to describe the multiplicative
+   bias in shear calibration as a function of signal-to-noise and
+   Resoltuion (psf_size/size). Property of Henk Hoekstra. 
+**/
+
+
+class henks_function : public test_function
+{
+
+ protected:
+
+  vector<double> params;
+
+ public:
+
+  /*
+    The standars constructor must be called with an input parameter vector
+    of at least 16 parameters. 
+  */
+
+  henks_function(vector<double> *input_parameters, vector<double> coordinates = vector<double>());
+
+  /*
+    Queries the function for a specific SNR-R coordinate pair.
+  */
+
+  double operator() (vector<double> coordinates);
+
+  /*
+    The current options for the derivative operator are either SNR or R. 
+  */
+
+  double D(vector<double> coordinates, string selection = "SNR");
+
+};
+
+
 
 #endif    /*TEST_FUNCTIONS_I_H*/

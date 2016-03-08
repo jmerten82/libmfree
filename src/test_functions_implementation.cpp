@@ -238,5 +238,87 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
   return value;
 }
 
+henks_function::henks_function(vector<double> *input_parameters, vector<double> coordinates)
+{
+
+  dim = 2;
+
+  if(input_parameters->size() < 16)
+    {
+      throw invalid_argument("HENKS_FUNCTION: Too few input parameters.");
+    }
+
+  if(coordinates.size() == 0)
+    {
+      coordinate_offset.push_back(0.);
+      coordinate_offset.push_back(0.);
+    }
+  else if(coordinates.size() < dim)
+    {
+      throw invalid_argument("HENKS_FUNCTION: Invalid offset vector.");
+    }
+  else
+    {
+      coordinate_offset.push_back(coordinates[0]);
+      coordinate_offset.push_back(coordinates[1]);
+    }
+
+  params.resize(16);
+  for(int i = 0; i < 16; i++)
+    {
+      params[i] = (*input_parameters)[i];
+    }
+}
+
+double henks_function::operator() (vector<double> coordinates)
+{
+
+  if(coordinates.size() < 2)
+    {
+      throw invalid_argument("HENKS_FUNCTION: Invalid coordinate query.");
+    }
+
+  double SNR = coordinates[0] - coordinate_offset[0];
+  double R = coordinates[1] - coordinate_offset[1];
+  SNR = SNR*111.86044+10.51412;
+  R  = R*15.70263+0.26474;
+  double f0, f1, f2, f3;
+
+  f0 = params[0] + params[1]/SNR + params[2]/(SNR*SNR) + params[3]/sqrt(SNR);
+  f1 = params[4] + params[5]/SNR + params[6]/(SNR*SNR) + params[7]/sqrt(SNR);
+  f2 = params[8] + params[9]/SNR+ params[10]/(SNR*SNR) + params[11]/sqrt(SNR);
+  f3 = params[12] + params[13]/SNR + params[14]/(SNR*SNR) + params[15]/sqrt(SNR);
+
+  return f0 + f1/R + f2*R + f3*R*R;
+}
+
+double henks_function::D(vector<double> coordinates, string selection)
+{
+  double SNR = coordinates[0] - coordinate_offset[0];
+  double R = coordinates[1] - coordinate_offset[1];
+
+  double value;
+
+
+  if(selection == "SNR")
+    {
+      value = -1./(2.*SNR*SNR*SNR*R)*(4.*params[6]+2.*SNR*params[5]+params[7]*pow(SNR,1.5)+4.*R*params[2]+2.*SNR*R*params[1]+params[3]*pow(SNR,1.5)*R+4.*params[10]*R*R+2.*params[9]*SNR*R*R+params[11]*pow(SNR,1.5)*R*R+4.*params[14]*R*R*R+2.*params[13]*SNR*R*R*R+params[15]*pow(SNR,1.5)*R*R*R);
+
+    }
+
+  else if(selection == "R")
+    {
+      value = params[8]+params[10]/(SNR*SNR)+params[9]/SNR+params[11]/sqrt(SNR) - 1./(R*R)*(params[4]+params[6]/(SNR*SNR)+params[5]/SNR+params[7]/sqrt(SNR)) + 2.*R*(params[12]+params[14]/(SNR*SNR)+params[13]/SNR+params[15]/sqrt(SNR));
+    }
+  else
+    {
+      throw invalid_argument("HENKS_FUNCTION: Invalid selection for D.");
+    }
+
+  return value;
+}
+
+
+
 
 

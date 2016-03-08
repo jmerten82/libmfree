@@ -317,7 +317,7 @@ vector<double> build_unit_grid(double pixel_size, bool spare_centre)
   return out;
 }
 
-vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials = vector<string>(), int refinements, int steps, string verbose_mode)
+vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials = vector<string>(), int refinements, int steps, double eps, string verbose_mode)
 {
   bool verbose = 0;
 
@@ -347,33 +347,10 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
   gsl_vector_view minimum_dists = gsl_vector_view_array_with_stride (&distances[1],stride,dim);
   double min_dist = gsl_vector_min(&minimum_dists.vector);  
  
-  //Finding maximum grid distance with the help of the convex hull
-  vector<Point_2> cgal_mesh;
-  vector<Point_2> cgal_chull;
-
-  for(int i = 0; i < dim; i++)
-    {
-      cgal_mesh.push_back(Point_2((*mesh_free_in)(i,0),(*mesh_free_in)(i,1)));
-    }
-  CGAL::convex_hull_2(cgal_mesh.begin(), cgal_mesh.end(), std::back_inserter(cgal_chull) );
-  int dim2 = cgal_chull.size();
-  double max_dist = 0.;
-  for(int i = 0; i < dim2-1; i++)
-    {
-      for(int j = i; j < dim2; j++)
-	{
-	  double current_dist = pow(cgal_chull[i][0]-cgal_chull[j][0],2) + pow(cgal_chull[i][1]-cgal_chull[j][1],2);
-	  if(current_dist > max_dist)
-	    {
-	      max_dist = current_dist;
-	    }
-	}
-    } 
 
   min_dist = sqrt(min_dist);
-  max_dist = sqrt(max_dist);
 
-  double eps_start_save = 1./max_dist;
+  double eps_start_save = eps;
   double eps_stop_save = 1./min_dist;
   double step_save = (eps_stop_save-eps_start_save)/steps;
 
@@ -402,14 +379,11 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
 	{
 	  string out_file = verbose_mode + "_" + differentials[diffs] + ".dat";
 	  out_log.open(out_file.c_str());
-	  out_log <<"#Minimum distance on grid: " <<min_dist <<endl;
-	  out_log <<"#Maximum distance on grid: " <<max_dist <<endl;
 	  out_log <<"#epsilon condition avg_error max_error" <<endl;
 	}
 
       while(main_index <= refinements)
 	{
-	  cout <<main_index <<endl;
 	  vector<double> epsilons, avg_errors, max_errors, conditions;
 	  for(double eps = eps_start; eps <= eps_stop; eps += step)
 	    {
@@ -472,7 +446,136 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
   return output;
 }
 
-double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn, string test_function_switch, int refinements, int steps, string verbose_mode)
+vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, string differential, int knn, int refinements, int steps, double eps, string verbose_mode)
+{
+
+  bool verbose = false;
+
+  if(verbose_mode != "")
+    {
+      verbose = true;
+    }
+
+  double eps_save = rbf_in->show_epsilon();
+
+  vector<double> adaptive_shape_parameter;
+
+  if(mesh_free_in->return_grid_size(1) != (*test_function_in)())
+    {
+      throw invalid_argument("SHAPE_OPT: Test function and mesh free not matching in dim.");
+    }
+
+
+  //Evaluating test function at all support nodes
+  vector<vector<double> > support_coordinates;
+  vector<double> support_function;
+  for(int i = 0; i < mesh_free_in->return_grid_size(); i++)
+    {
+      vector<double> current_coordinates = (*mesh_free_in)(i);
+      support_function.push_back((*test_function_in)(current_coordinates));
+      support_coordinates.push_back(current_coordinates);
+    }
+  //Building the tree for the grid once to query some distances later.
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn);
+  interpolant_distances.resize(knn);
+  flann::Matrix<double> flann_dataset(&support_coordinates[0][0],mesh_free_in->return_grid_size(),mesh_free_in->return_grid_size(1));
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+
+  ofstream out_log;
+  if(verbose)
+    {
+      out_log.open(verbose_mode.c_str());
+      out_log <<"#pixel epsilon condition error" <<endl;
+    }
+
+  double current_target_value;
+  for(int global = 0; global < mesh_free_in->return_grid_size(); global++)
+    {
+      current_target_value = test_function_in->D(support_coordinates[global],differential);
+
+      //Finding maximum shape parameter. 
+      vector<int> dummy_tree;
+      dummy_tree.resize(1);
+      vector<double> current_min_dist;
+      current_min_dist.resize(1);
+      flann::Matrix<double> flann_dataset_interpolant(&support_coordinates[global][0],1,mesh_free_in->return_grid_size(1));
+      flann::Matrix<int> flann_tree(&dummy_tree[0],1,1);
+      flann::Matrix<double> flann_distances(&current_min_dist[0],1,1);
+      index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances,1, flann::SearchParams(128));
+
+      //Doing the shape parameter loop. 
+      double eps_start = eps;
+      double eps_stop = 1./(sqrt(current_min_dist[0]+eps));
+      double step = (eps_stop - eps_start) / steps;
+
+      double main_index = 0;
+      double final_eps;
+      while(main_index <= refinements)
+	{
+	  vector<double> epsilons, errors, conditions;
+	  for(double current_eps = eps_start; current_eps <= eps_stop; current_eps += step)
+	    {
+	      double condition,error;
+	      vector<double> current_interpol_out;
+	      rbf_in->set_epsilon(current_eps);
+	      
+	      condition = mesh_free_in->differentiate(&support_coordinates[global],&support_function,differential,rbf_in, &current_interpol_out, knn);
+	      error = abs((current_interpol_out[0]-current_target_value)/current_target_value);
+	      conditions.push_back(condition);
+	      errors.push_back(error);
+	      epsilons.push_back(current_eps);
+	      if(verbose)
+		{
+		  out_log <<global <<"\t" <<current_eps <<"\t" <<condition <<"\t" <<error <<endl;
+		}
+	    } // end of eps loop
+
+
+	  vector<double>::iterator best_eps_error;
+	  best_eps_error = min_element(errors.begin(),errors.end());
+	  int best_eps_index = distance(errors.begin(),best_eps_error);
+	  if(best_eps_index > 0)
+	    {
+	      eps_start = epsilons[best_eps_index-1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[0];
+	    }
+	  if(best_eps_index < epsilons.size()-1)
+	    {
+	      eps_stop = epsilons[best_eps_index+1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[epsilons.size()-1];
+	    }
+	  step = (eps_stop-eps_start)/steps; 
+	  
+	  final_eps = epsilons[best_eps_index];    
+	  main_index++;
+	      
+	} //end of refinement loop
+      
+      adaptive_shape_parameter.push_back(final_eps);
+
+    } //End of all nodes loop
+
+  if(verbose)
+    {
+      out_log.close();
+    }
+
+  rbf_in->set_epsilon(eps_save);
+
+  return adaptive_shape_parameter;
+
+}
+
+double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn, string test_function_switch, int refinements, int steps, double eps, string verbose_mode)
 {
 
   bool verbose = 0;
@@ -485,11 +588,6 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
     }
 
   ofstream out_log;
-
-  if(verbose)
-    {
-      out_log.open(verbose_mode.c_str());
-    }
 
   //Problem dimension
   int dim = mesh_free_in->return_grid_size();
@@ -504,34 +602,10 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
   //Finding minimum nn distance with gsl vector views
   gsl_vector_view minimum_dists = gsl_vector_view_array_with_stride (&distances[1],stride,dim);
   double min_dist = gsl_vector_min(&minimum_dists.vector);  
- 
-  //Finding maximum grid distance with the help of the convex hull
-  vector<Point_2> cgal_mesh;
-  vector<Point_2> cgal_chull;
-
-  for(int i = 0; i < dim; i++)
-    {
-      cgal_mesh.push_back(Point_2((*mesh_free_in)(i,0),(*mesh_free_in)(i,1)));
-    }
-  CGAL::convex_hull_2(cgal_mesh.begin(), cgal_mesh.end(), std::back_inserter(cgal_chull) );
-  int dim2 = cgal_chull.size();
-  double max_dist = 0.;
-  for(int i = 0; i < dim2-1; i++)
-    {
-      for(int j = i; j < dim2; j++)
-	{
-	  double current_dist = pow(cgal_chull[i][0]-cgal_chull[j][0],2) + pow(cgal_chull[i][1]-cgal_chull[j][1],2);
-	  if(current_dist > max_dist)
-	    {
-	      max_dist = current_dist;
-	    }
-	}
-    } 
 
   min_dist = sqrt(min_dist);
-  max_dist = sqrt(max_dist);
 
-  double eps_start_save = 1./max_dist;
+  double eps_start_save = eps;
   double eps_stop_save = 1./min_dist;
   double step_save = (eps_stop_save-eps_start_save)/steps;
 
@@ -576,10 +650,7 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
   double main_index = 0;
   if(verbose)
     {
-      string out_file = verbose_mode;
-      out_log.open(out_file.c_str());
-      out_log <<"#Minimum distance on grid: " <<min_dist <<endl;
-      out_log <<"#Maximum distance on grid: " <<max_dist <<endl;
+      out_log.open(verbose_mode.c_str());
       out_log <<"#epsilon condition avg_error max_error" <<endl;
     }
 
@@ -645,4 +716,156 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
   rbf_in->set_epsilon(eps_save);
   return final_eps;
   
+}
+
+vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn, string test_function_switch , int refinements, int steps, double eps, string verbose_mode)
+{
+
+  bool verbose = false;
+
+  if(verbose_mode != "")
+    {
+      verbose = true;
+    }
+
+  vector<double> adaptive_shape_parameter;
+
+  double eps_save = rbf_in->show_epsilon();
+
+  if(mesh_free_in->return_grid_size(1) != (*test_function_in)())
+    {
+      throw invalid_argument("SHAPE_OPT: Test function and mesh free not matchgin in dim.");
+    }
+
+  //Evaluating test function at all support nodes
+  vector<double> support_coordinates;
+  vector<double> support_function;
+  for(int i = 0; i < mesh_free_in->return_grid_size(); i++)
+    {
+      vector<double> current_coordinates = (*mesh_free_in)(i);
+      if(test_function_switch == "")
+	{
+	  support_function.push_back((*test_function_in)(current_coordinates));
+	}
+      else
+	{
+	  support_function.push_back(test_function_in->D(current_coordinates,test_function_switch));
+	}
+      for(int j = 0; j < current_coordinates.size(); j++)
+	{
+	  support_coordinates.push_back(current_coordinates[j]);
+	}
+    }
+
+  //Building the tree for the grid once to query some distances later.
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn);
+  interpolant_distances.resize(knn);
+  flann::Matrix<double> flann_dataset(&support_coordinates[0],mesh_free_in->return_grid_size(),mesh_free_in->return_grid_size(1));
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+
+  ofstream out_log;
+
+  if(verbose)
+    {
+      out_log.open(verbose_mode.c_str());
+      out_log <<"#pixel epsilon condition error" <<endl;
+    }
+
+
+  //Main loop over all target nodes
+
+  vector<double> current_target_coordinates;
+  for(int global = 0; global < mesh_free_target->return_grid_size(); global++)
+    {
+      double current_target_value;
+      current_target_coordinates = (*mesh_free_target)(global);
+      if(test_function_switch == "")
+	{
+	  current_target_value = (* test_function_in)(current_target_coordinates);
+	}
+      else
+	{
+	  current_target_value = test_function_in->D(current_target_coordinates,test_function_switch);
+	}
+
+      //Finding maximum shape parameter. 
+      vector<int> dummy_tree;
+      dummy_tree.resize(1);
+      vector<double> current_min_dist;
+      current_min_dist.resize(1);
+      flann::Matrix<double> flann_dataset_interpolant(&current_target_coordinates[0],1,mesh_free_target->return_grid_size(1));
+      flann::Matrix<int> flann_tree(&dummy_tree[0],1,1);
+      flann::Matrix<double> flann_distances(&current_min_dist[0],1,1);
+      index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances,1, flann::SearchParams(128));
+
+      //Doing the shape parameter loop. 
+      double eps_start = eps;
+      double eps_stop = 1./(sqrt(current_min_dist[0]+eps));
+      double step = (eps_stop - eps_start) / steps;
+
+      double main_index = 0;
+      double final_eps;
+      while(main_index <= refinements)
+	{
+	  vector<double> epsilons, errors, conditions;
+	  for(double current_eps = eps_start; current_eps <= eps_stop; current_eps += step)
+	    {
+	      double condition,error;
+	      vector<double> current_interpol_out;
+	      rbf_in->set_epsilon(current_eps);
+	      
+	      condition = mesh_free_in->interpolate(&current_target_coordinates,&support_function, &current_interpol_out, rbf_in, knn);		
+	      error = abs((current_interpol_out[0]-current_target_value)/current_target_value);
+	      conditions.push_back(condition);
+	      errors.push_back(error);
+	      epsilons.push_back(current_eps);
+	      if(verbose)
+		{
+		  out_log <<global <<"\t" <<current_eps <<"\t" <<condition <<"\t" <<error <<endl;
+		}
+	    } // end of eps loop
+
+
+	  vector<double>::iterator best_eps_error;
+	  best_eps_error = min_element(errors.begin(),errors.end());
+	  int best_eps_index = distance(errors.begin(),best_eps_error);
+	  if(best_eps_index > 0)
+	    {
+	      eps_start = epsilons[best_eps_index-1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[0];
+	    }
+	  if(best_eps_index < epsilons.size()-1)
+	    {
+	      eps_stop = epsilons[best_eps_index+1];
+	    }
+	  else
+	    {
+	      eps_stop = epsilons[epsilons.size()-1];
+	    }
+	  step = (eps_stop-eps_start)/steps; 
+	  
+	  final_eps = epsilons[best_eps_index];    
+	  main_index++;
+	      
+	} //end of refinement loop
+      
+      adaptive_shape_parameter.push_back(final_eps);
+
+    } //End of all nodes loop
+
+  if(verbose)
+    {
+      out_log.close();
+    }
+
+  rbf_in->set_epsilon(eps_save);
+
+  return adaptive_shape_parameter;
+
 }

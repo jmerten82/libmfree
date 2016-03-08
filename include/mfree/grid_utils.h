@@ -25,13 +25,8 @@ jmerten@caltech.edu
 #include <mfree/radial_basis_function.h>
 #include <mfree/test_functions.h>
 #include <flann/flann.hpp>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/convex_hull_2.h>
 
 using namespace std;
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::Point_2 Point_2;
 
 /*
   This routine fills the entries of the smaller grid
@@ -130,7 +125,18 @@ vector<double> build_unit_grid(double pixel_size, bool spare_centre);
   process are written to ASCII.
 */
 
-vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials, int refinements = 1, int steps = 100, string verbose_mode = "");
+vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials, int refinements = 1, int steps = 100, double eps = 1e-3, string verbose_mode = "");
+
+/*
+  This is another version of the differentiation grid optimisation, which
+  delivers an return an adaptive shape parameter, 
+  which can vary from node to node. Only a single derivative is possible here.
+  The number of nearest neighbours has to be defined here. 
+*/
+
+vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, string differential, int knn = 16, int refinements = 1, int steps = 100, double eps = 1e-3, string verbose_mode = "");
+  
+
 
 /*
   This function is equivalent to the differentiation optimisation but optimises
@@ -138,7 +144,14 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
   layout and the target one, it needs to meshes to operate on. 
 */
 
-double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn = 16, string test_function_switch = "", int refinements = 1, int steps = 100, string verbose_mode = "");
+double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn = 16, string test_function_switch = "", int refinements = 1, int steps = 100,double eps = 1e-3, string verbose_mode = "");
+
+/*
+  And also here this version of the function does the node-by-node optimisation
+  with an adaptive shape parameter vectos as return.
+*/
+
+vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn = 16, string test_function_switch = "", int refinements = 1, int steps = 100, double eps = 1e-3, string verbose_mode = "");
 
 
 

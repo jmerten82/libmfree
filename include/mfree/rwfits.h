@@ -591,7 +591,7 @@ template <class T> void voronoi_to_fits(mesh_free_2D *grid, vector<T> *function,
   if(ratio > 1.0)
     {
       x_dim = dim;
-      y_dim = floor((double) dim * ratio +0.5);
+      y_dim = floor((double) dim / ratio +0.5);
     }
   else
     {

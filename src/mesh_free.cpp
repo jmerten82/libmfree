@@ -664,6 +664,8 @@ double mesh_free::interpolate(vector<double> *output_grid, vector<double> *input
   index.buildIndex();
   index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
 
+
+
   //For each individual output point, build the linear system and calculate interpolant
 
   //Allocating work space for linear system to get finite differencing 
@@ -739,6 +741,13 @@ double mesh_free::interpolate(vector<double> *output_grid, vector<double> *input
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
     }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
 
   //Calculating the interpolant
 
@@ -915,6 +924,13 @@ double mesh_free::interpolate(vector<double> *output_grid, vector<double> *input
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
     }
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
 
   //Calculating the interpolant
 
