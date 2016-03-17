@@ -39,6 +39,9 @@ int main()
   mesh_free_2D mfree1(&construction_coordinates);
   mesh_free_2D mfree2(&output_coordinates);
 
+  mfree1.write_ASCII("./data/grid1.dat");
+  mfree2.write_ASCII("./data/grid2.dat");
+
   //Creating a Gaussian RBF
   gaussian_rbf rbf1(1.0);
 
