@@ -280,8 +280,8 @@ double henks_function::operator() (vector<double> coordinates)
 
   double SNR = coordinates[0] - coordinate_offset[0];
   double R = coordinates[1] - coordinate_offset[1];
-  SNR = SNR*111.86044+10.51412;
-  R  = R*15.70263+0.26474;
+  SNR = SNR*200.+5.;
+  //R  = R*15.70263+0.26474;
   double f0, f1, f2, f3;
 
   f0 = params[0] + params[1]/SNR + params[2]/(SNR*SNR) + params[3]/sqrt(SNR);

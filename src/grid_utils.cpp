@@ -348,7 +348,7 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
   double min_dist = gsl_vector_min(&minimum_dists.vector);  
  
 
-  min_dist = sqrt(min_dist);
+  min_dist = sqrt(min_dist+eps);
 
   double eps_start_save = eps;
   double eps_stop_save = 1./min_dist;
@@ -385,11 +385,11 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
       while(main_index <= refinements)
 	{
 	  vector<double> epsilons, avg_errors, max_errors, conditions;
-	  for(double eps = eps_start; eps <= eps_stop; eps += step)
+	  for(double current_eps = eps_start; current_eps <= eps_stop; current_eps += step)
 	    {
 	      vector<double> difference_vector;
 	      double condition;
-	      rbf_in->set_epsilon(eps);
+	      rbf_in->set_epsilon(current_eps);
 	      vector<double> current_diff_out;
 	      condition = mesh_free_in->differentiate(&base_function,differentials[diffs],rbf_in, &current_diff_out);
 	      for(int i = 0; i < dim; i++)
@@ -403,11 +403,11 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
 	      vector<double>::iterator max_iterator;
 	      max_iterator = max_element(difference_vector.begin(),difference_vector.end());
 	      max_errors.push_back(*max_iterator);
-	      epsilons.push_back(eps);
+	      epsilons.push_back(current_eps);
 	      conditions.push_back(condition);
 	      if(verbose)
 		{
-		  out_log <<eps <<"\t" <<condition <<"\t" <<avg_error <<"\t" <<*max_iterator <<endl;
+		  out_log <<current_eps <<"\t" <<condition <<"\t" <<avg_error <<"\t" <<*max_iterator <<endl;
 		}
 	    } //End of eps loop
 
