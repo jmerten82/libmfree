@@ -603,7 +603,7 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
   gsl_vector_view minimum_dists = gsl_vector_view_array_with_stride (&distances[1],stride,dim);
   double min_dist = gsl_vector_min(&minimum_dists.vector);  
 
-  min_dist = sqrt(min_dist);
+  min_dist = sqrt(min_dist+eps);
 
   double eps_start_save = eps;
   double eps_stop_save = 1./min_dist;
