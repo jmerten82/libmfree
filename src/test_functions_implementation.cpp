@@ -187,7 +187,7 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
 	    {
 	      value *= -1e-3;
 	    }
-	  else if(abs(coordinates[0]-coordinate_offset[0]) < 1e-3 && coordinates[0]-coordinate_offset[0] > 0.)
+	  else if(abs(coordinates[0]-coordinate_offset[0]) < 1e-3 && coordinates[0]-coordinate_offset[0] >= 0.)
 	    {
 	      value *= 1e-3;
 	    } 
@@ -202,7 +202,7 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
 	    {
 	      value *= -1e-3;
 	    }
-	  else if(abs(coordinates[1]-coordinate_offset[1]) < 1e-3 && coordinates[1]-coordinate_offset[1] > 0.)
+	  else if(abs(coordinates[1]-coordinate_offset[1]) < 1e-3 && coordinates[1]-coordinate_offset[1] >= 0.)
 	    {
 	      value *= 1e-3;
 	    } 
