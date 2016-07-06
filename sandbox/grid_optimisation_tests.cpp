@@ -19,6 +19,7 @@ http://www.julianmerten.net
 #include <mfree/test_functions.h>
 #include <mfree/test_functions_implementation.h>
 #include <mfree/rwfits.h>
+#include <saw2/omp/tools.h>
 
 using namespace std;
 
@@ -53,9 +54,11 @@ int main()
 
   double result = optimise_grid_interpolation(&mfree1,&mfree2,&rbf1,&test_function1,knn,"",4,100,1e-3,"./data/optimise_interpolation.txt");
 
+  double result2 = ga_omp_optimise_interpolation(&mfree1,&mfree2,&test_function1,2,knn,"",4,100,1.e-3);
+
   cout <<"Done." <<endl;
   cout <<"Final shape " <<result <<endl;
-
+  cout <<"Final shape OMP " <<result2 <<endl;
 
   cout <<"Adaptively optimising interpolation..." <<flush;
 

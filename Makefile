@@ -14,10 +14,13 @@ SRC 		= $(wildcard $(MFREESRC)/*.cpp)
 OBJ		= $(SRC:$(MFREESRC)/%.cpp=$(MFREEOBS)/%.o)
 
 
-.PHONY: clean distclean doc	
+.base: 
+	if ! [ -e $(MFREEOBS) ]; then mkdir $(MFREEOBS);  fi; touch $(MFREEOBS)
+
+.PHONY: clean
 
 
-$(MFREEOBS)/%.o: $(MFREESRC)/%.cpp 
+$(MFREEOBS)/%.o: $(MFREESRC)/%.cpp .base
 	$(CC) $(CCFLAGS) -c -o $@  $< $(ADDINC)
 
 $(LIBNAMESTAT): $(OBJ)
@@ -33,6 +36,10 @@ default: $(LIBNAMESTAT)
 all:	 $(LIBNAMESTAT)
 install: $(LIBNAMESTAT)
 shared: $(LIBNAMEDYN)
+clean:	.base
+	rm -rf $(MFREEOBS);
+	rm -f $(LIBNAMESTAT);
+	rm -f $(LIBNAMEDYN)
 
 radial_basis_function.o:
 rbf_implementation.o: radial_basis_function.o
