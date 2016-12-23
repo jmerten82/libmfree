@@ -27,5 +27,19 @@ using namespace std;
 vector<double> row_vector_from_polynomial(vector<double> coordinates, uint pdeg = 2);
 
 
+/*
+  This is a special case for initial test implementations which implements polynomial support for a two-dimensional domain.
+*/
+
+vector<double> row_vector_from_polynomial_2D(vector<double> coordinates, uint pdeg = 0);
+
+/*
+  This helper function delivers the polynomial support right hand side column
+  vector depending on the derivative in question and the polynomial order. 
+*/
+
+vector<double> polynomial_support_rhs_column_vector_2D(string derivative = "x", uint pdeg = 0);
+
+
 
 #endif    /*POLYNOMIAL_TERMS_H*/

@@ -17,6 +17,7 @@ http://www.julianmerten.net
 #define    RADIAL_BASIS_FUNCTIONS_H
 
 #include <stdexcept>
+#include <cmath>
 
 using namespace std;
 
@@ -115,13 +116,13 @@ class radial_basis_function
     the 1D, 2D and 3D case. Also this is implemented as pure virtual function
   */
 
-  virtual double operator() (double x_in, double y_in, double z_in = 0.) = 0;
+  double operator() (double x_in, double y_in, double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double operator() (coordinate x_in) = 0;
+  double operator() (coordinate x_in);
 
   /*
     This function returns the x derivative of the 
@@ -134,33 +135,33 @@ class radial_basis_function
     The same function as above but using a 2D coordinate structure.
   */
 
-  virtual double Dx(coordinate x_in) = 0;
+  double Dx(coordinate x_in);
 
   /*
     This function returns the y derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dy(coordinate x_in) = 0;
+  double Dy(coordinate x_in);
 
   /*
     This function returns the z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dz(coordinate x_in) = 0;
+  double Dz(coordinate x_in);
 
   /*
     This function returns the second x derivative of the 
@@ -173,33 +174,33 @@ class radial_basis_function
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxx(coordinate x_in) = 0;
+  double Dxx(coordinate x_in);
 
   /*
     This function returns the second y derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dyy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dyy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dyy(coordinate x_in) = 0;
+  double Dyy(coordinate x_in);
 
   /*
     This function returns the second z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dzz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dzz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dzz(coordinate x_in) = 0;
+  double Dzz(coordinate x_in);
 
   /*
     This function returns the second mixed x and y derivative of the 
@@ -212,33 +213,33 @@ class radial_basis_function
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxy(coordinate x_in) = 0;
+  double Dxy(coordinate x_in);
 
   /*
     This function returns the second mixed x and z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dxz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxz(coordinate x_in) = 0;
+  double Dxz(coordinate x_in);
 
   /*
     This function returns the second mixed y and z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dyz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dyz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dyz(coordinate x_in) = 0;
+  double Dyz(coordinate x_in);
 
   /*
     This function returns the third x derivative of the 
@@ -251,33 +252,33 @@ class radial_basis_function
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxxx(coordinate x_in) = 0;
+  double Dxxx(coordinate x_in);
 
   /*
     This function returns the third y derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dyyy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dyyy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dyyy(coordinate x_in) = 0;
+  double Dyyy(coordinate x_in);
 
   /*
     This function returns the third  z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in, z_in);
   */
 
-  virtual double Dzzz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dzzz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dzzz(coordinate x_in) = 0;
+  double Dzzz(coordinate x_in);
 
   /*
     This function returns the third mixed xx and y derivative of the 
@@ -290,71 +291,71 @@ class radial_basis_function
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxxy(coordinate x_in) = 0;
+  double Dxxy(coordinate x_in);
 
   /*
     This function returns the third mixed xx and z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in, z_in);
   */
 
-  virtual double Dxxz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dxxz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxxz(coordinate x_in) = 0;
+  double Dxxz(coordinate x_in);
   /*
     This function returns the third mixed yy and z derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in, z_in);
   */
 
-  virtual double Dyyz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dyyz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dyyz(coordinate x_in) = 0;
+  double Dyyz(coordinate x_in);
 
   /*
     This function returns the third mixed x and yy derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxyy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dxyy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxyy(coordinate x_in) = 0;
+  double Dxyy(coordinate x_in);
 
   /*
     This function returns the third mixed x and zz derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxzz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dxzz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxzz(coordinate x_in) = 0;
+  double Dxzz(coordinate x_in);
 
   /*
     This function returns the third mixed y and zz derivative of the 
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dyzz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  double Dyzz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dyzz(coordinate x_in) = 0;
+  double Dyzz(coordinate x_in);
 
   /*
     This function returns the third mixed x, y and z derivative of the 
@@ -367,7 +368,7 @@ class radial_basis_function
     The same function as above but using a coordinate structure.
   */
 
-  virtual double Dxyz(coordinate x_in) = 0;
+  double Dxyz(coordinate x_in);
 
 };
 
