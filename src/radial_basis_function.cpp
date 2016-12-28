@@ -45,6 +45,7 @@ coordinate radial_basis_function::show_coordinate_offset()
 
 double radial_basis_function::operator() (double x_in, double y_in, double z_in)
 {
+
   double x = x_in-x_0;
   double y = y_in-y_0;
   double z = z_in-z_0;

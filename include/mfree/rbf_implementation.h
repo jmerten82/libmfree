@@ -50,6 +50,7 @@ class gaussian_rbf : public radial_basis_function_shape
   void set_epsilon(double epsilon_in);
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);

@@ -12,6 +12,7 @@ http://www.julianmerten.net
 #define    RBF_PHS_H
 
 #include <cmath>
+#include <limits>
 #include <mfree/radial_basis_function.h>
 
 using namespace std;
@@ -25,7 +26,7 @@ class phs_first_order : public radial_basis_function
 {
 
  public:
-  
+ 
  phs_first_order(double x = 0., double y = 0., double z = 0.) :  radial_basis_function(x,y,z) {};
 
  phs_first_order(coordinate input) :  radial_basis_function(input) {};
@@ -33,6 +34,7 @@ class phs_first_order : public radial_basis_function
  phs_first_order(phs_first_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -59,6 +61,7 @@ class phs_second_order : public radial_basis_function
  phs_second_order(phs_second_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -84,6 +87,7 @@ class phs_third_order : public radial_basis_function
  phs_third_order(phs_third_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -111,6 +115,7 @@ class phs_fourth_order : public radial_basis_function
  phs_fourth_order(phs_fourth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -136,6 +141,7 @@ class phs_fifth_order : public radial_basis_function
  phs_fifth_order(phs_fifth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -162,6 +168,7 @@ class phs_sixth_order : public radial_basis_function
  phs_sixth_order(phs_sixth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -187,6 +194,7 @@ class phs_seventh_order : public radial_basis_function
  phs_seventh_order(phs_seventh_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -212,6 +220,7 @@ class phs_eighth_order : public radial_basis_function
  phs_eighth_order(phs_eighth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -237,6 +246,7 @@ class phs_nineth_order : public radial_basis_function
  phs_nineth_order(phs_nineth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -262,6 +272,7 @@ class phs_tenth_order : public radial_basis_function
  phs_tenth_order(phs_tenth_order &input) : radial_basis_function(input) {};
 
   double operator() (double radius);
+  using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
   double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
