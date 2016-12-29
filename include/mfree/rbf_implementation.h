@@ -59,6 +59,124 @@ class gaussian_rbf : public radial_basis_function_shape
   double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
 };
 
+/**
+   The multiquadric radial basis function:
+   phi(r) = sqrt(1+(eps*r)^2)
+**/
+
+class multiquadric_rbf : radial_basis_function_shape
+{
+
+ protected:
+
+  /*
+    Constants often used in the differentiation.
+  */
+
+  double Etwo, Efour, Esix;
+
+  /*
+    See base class radial_basis function for explanation. 
+  */
+ public:
+
+  multiquadric_rbf(double x = 0., double y = 0., double z = 0., double shape = 1.);
+
+  multiquadric_rbf(coordinate input, double shape = 1.);
+
+  multiquadric_rbf(multiquadric_rbf &input);
+
+  void set_epsilon(double epsilon_in);
+
+  double operator() (double radius);
+  using radial_basis_function::operator();
+  double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
+
+};
+
+/**
+   Implements inverse quadric RBF:
+   phi(r) = (1.+(eps*r)^2)^-1/2
+**/
+
+class inverse_multiquadric_rbf : radial_basis_function_shape
+{
+
+ protected:
+
+  /*
+    Constants often used in the differentiation.
+  */
+
+  double Etwo, Efour, Esix;
+
+  /*
+    See base class radial_basis function for explanation. 
+  */
+ public:
+
+  inverse_multiquadric_rbf(double x = 0., double y = 0., double z = 0., double shape = 1.);
+
+  inverse_multiquadric_rbf(coordinate input, double shape = 1.);
+
+  inverse_multiquadric_rbf(inverse_multiquadric_rbf &input);
+
+  void set_epsilon(double epsilon_in);
+
+  double operator() (double radius);
+  using radial_basis_function::operator();
+  double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
+};
+
+/**
+   Implements inverse quadric RBF:
+   phi(r) = (1.+(eps*r)^2)^-1
+**/
+
+class inverse_quadratic_rbf : radial_basis_function_shape
+{
+
+ protected:
+
+  /*
+    Constants often used in the differentiation.
+  */
+
+  double Etwo, Efour, Esix, TwoEtwo;
+
+  /*
+    See base class radial_basis function for explanation. 
+  */
+ public:
+
+  inverse_quadratic_rbf(double x = 0., double y = 0., double z = 0., double shape = 1.);
+
+  inverse_quadratic_rbf(coordinate input, double shape = 1.);
+
+  inverse_quadratic_rbf(inverse_quadratic_rbf &input);
+
+  void set_epsilon(double epsilon_in);
+
+  double operator() (double radius);
+  using radial_basis_function::operator();
+  double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
+  double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
+};
+
 
 
 
