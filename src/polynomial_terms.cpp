@@ -54,7 +54,7 @@ vector<double> row_vector_from_polynomial(vector<double> coordinates, uint pdeg)
 }
 
 
-vector<double> row_vector_from_polynomial_2D(vector<double> coordinates, uint pdeg)
+vector<double> row_vector_from_polynomial_2D(double x, double y, uint pdeg)
 {
 
   vector<double> row_vector;
@@ -65,8 +65,8 @@ vector<double> row_vector_from_polynomial_2D(vector<double> coordinates, uint pd
 
   for(uint i = 1; i <= pdeg; i++)
     {
-      x_values.push_back(x_values[i]*coordinates[0]);
-      y_values.push_back(y_values[i]*coordinates[1]);
+      x_values.push_back(x_values[i]*x);
+      y_values.push_back(y_values[i]*y);
     }
 
   row_vector.push_back(1.);
@@ -147,6 +147,11 @@ vector<double> polynomial_support_rhs_column_vector_2D(string selection, uint pd
     {
       out[3] = 2.;
       out[5] = 2.; 
+    }
+
+  else
+    {
+      throw invalid_argument("POLYTERMS: Invalid derivative selection");
     }
   
   return out;

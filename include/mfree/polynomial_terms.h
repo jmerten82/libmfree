@@ -31,7 +31,7 @@ vector<double> row_vector_from_polynomial(vector<double> coordinates, uint pdeg 
   This is a special case for initial test implementations which implements polynomial support for a two-dimensional domain.
 */
 
-vector<double> row_vector_from_polynomial_2D(vector<double> coordinates, uint pdeg = 0);
+vector<double> row_vector_from_polynomial_2D(double x, double y, uint pdeg = 0);
 
 /*
   This helper function delivers the polynomial support right hand side column

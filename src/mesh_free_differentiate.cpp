@@ -1105,9 +1105,188 @@ double mesh_free_2D::create_finite_differences_weights(string selection, vector<
   RBF->set_epsilon(shape_save);
 
   return gsl_stats_mean(&condition[0], 1, num_nodes);
+}
+
+double mesh_free_2D::create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF)
+{
+
+  //Checking if the tree is up to date
+  if(kD_update)
+    {
+      throw invalid_argument("UNSTRUC_GRID: Tree needs to be updated befor FD.");
+    }
+
+  //Determining the size of the problem
+  if(kD_tree.size() % num_nodes != 0)
+    {
+      throw logic_error("UNSTRUC_GRID: The kD-tree size is invalid.");
+    }
+  int num_neighbours = kD_tree.size() / num_nodes;
+  int polynomial = (pdeg+1)*(pdeg+2)/2.;
+
+
+
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output weights
+  weights->resize(kD_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval, y_eval, x_1, y_1, value, x_node, y_node, min, max;
+  int tree_position_seed, index1, index2;
+
+
+  //Looping through all grid nodes
+  for(int global = 0; global < num_nodes; global++)
+    {
+      //Getting evaluation coordinate
+      x_eval = coordinates[global*2];
+      y_eval = coordinates[global*2+1];
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*num_neighbours;
+
+      //Building up the linear system of equations
+
+
+      //Building the non-changing part of the result vector
+      vector<double> missing_columns = polynomial_support_rhs_column_vector_2D(selection, pdeg);
+      for(uint l = 0; l < missing_columns.size(); l++)
+	{
+	  gsl_vector_set(b,l+num_neighbours,missing_columns[l]);
+	}
+
+      //Main matrix part, looping over all neighbours. 
+      for(int i = 0; i < num_neighbours; i++)
+	{
+	  //Getting node position and setting RBF to reference
+	  x_node = coordinates[kD_tree[tree_position_seed+i]*2];
+	  y_node = coordinates[kD_tree[tree_position_seed+i]*2+1];
+	  RBF->set_coordinate_offset(x_eval, y_eval);
+
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < num_neighbours; j++)
+	    {
+	      //calculating the distance
+	      index1 = kD_tree[tree_position_seed+i];
+	      index2 = kD_tree[tree_position_seed+j];
+	      x_1 = coordinates[index1*2];
+	      x_1 -= coordinates[index2*2];
+	      x_1 *= x_1;   
+	      y_1 = coordinates[index1*2+1];
+	      y_1 -= coordinates[index2*2+1];
+	      y_1 *= y_1;
+	      x_1 += y_1;
+	      //Evaluating radial basis function
+	      //This square root is not super efficient
+	      //Should be implemented in r^2 manner
+	      value = (* RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+
+	  vector<double> missing_rows = row_vector_from_polynomial_2D(x_node-x_eval,y_node-y_eval, pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+num_neighbours,missing_rows[l]);
+	    }
+ 
+	  //Creating the data vector	  
+	  if(selection == "x")
+	    {
+	      gsl_vector_set(b,i,RBF->Dx(x_node,y_node));
+	    }	  
+	  else if(selection == "y")
+	    {
+	      gsl_vector_set(b,i,RBF->Dy(x_node,y_node));
+	    }
+	  else if(selection == "xx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxx(x_node,y_node));
+	    }	
+	  else if(selection == "yy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyy(x_node,y_node));
+	    }
+	  else if(selection == "xy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxy(x_node,y_node));
+	    }
+	  else if(selection == "xxx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxx(x_node,y_node));
+	    }
+	  else if(selection == "yyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyyy(x_node,y_node));
+	    }
+	  else if(selection == "xxy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxy(x_node,y_node));
+	    }
+	  else if(selection == "xyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxyy(x_node,y_node));
+	    }
+	  else if(selection == "Laplace")
+	    {
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_node,y_node)+RBF->Dyy(x_node,y_node)));
+	    }
+	  else if(selection == "Neg_Laplace")
+	    {
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_node,y_node)-RBF->Dyy(x_node,y_node)));
+	    }
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < num_neighbours; i++)
+	{
+	  (* weights)[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+  //Cleanig up gsl work force
+  gsl_matrix_free(A);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes);
+
+
 
 
 }
+
+
 
 double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn)
 {

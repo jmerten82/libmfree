@@ -21,6 +21,7 @@ http://www.julianmerten.net
 #include <flann/flann.hpp>
 #include <mfree/radial_basis_function.h>
 #include <mfree/mesh_free.h>
+#include <mfree/polynomial_terms.h>
 
 using namespace std;
 
@@ -274,6 +275,13 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
 
+  /*
+    This implementation is still somewhat experiemental and adds polynomial 
+    support of arbitrary order to the creation of the weight. 
+    The maximum polynomial order must be specified.
+  */
+
+  double create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF);
 
   /*
     This line is needed because of function hiding in derived classes. 

@@ -64,7 +64,7 @@ int main()
 	  for(uint j = 0; j < 256; j++)
 	    {
 	      x = -1. + j*step;
-	      grid.push_back(rbfs[r]->Dxx(x,y));
+	      grid.push_back(rbfs[r]->Dxxy(x,y));
 	    }
 	}
       write_img_to_fits(name,&grid);
