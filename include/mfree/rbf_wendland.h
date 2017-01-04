@@ -193,12 +193,13 @@ class wendland_C4 : public radial_basis_function_shape
 
  public:
   
- wendland_C4(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape) {};
+ wendland_C4(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape), E1(5.*shape), E2(56.*shape*shape), E3(1680.*shape*shape*shape*shape) {};
 
- wendland_C4(coordinate input) :  radial_basis_function_shape(input) {};
+ wendland_C4(coordinate input, double shape = 1.0) :  radial_basis_function_shape(input,shape), E1(5.*shape), E2(56.*shape*shape), E3(1680.*shape*shape*shape*shape) {};
 
- wendland_C4(wendland_C4 &input) :  radial_basis_function_shape(input) {};
+ wendland_C4(wendland_C4 &input) :  radial_basis_function_shape(input), E1(input.E1), E2(input.E2), E3(input.E3) {};
   
+  void set_epsilon(double epsilon_in);
   double operator() (double radius);
   using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -219,14 +220,19 @@ class wendland_C4 : public radial_basis_function_shape
 class wendland_C0_5D : public radial_basis_function_shape
 {
 
+ protected:
+
+  double E1, E2, E3;
+
  public:
   
- wendland_C0_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape) {};
+ wendland_C0_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape), E1(3.*shape), E2(-3.*shape), E3(shape*shape) {};
 
- wendland_C0_5D(coordinate input) :  radial_basis_function_shape(input) {};
+ wendland_C0_5D(coordinate input, double shape = 1.) :  radial_basis_function_shape(input, shape), E1(3.*shape), E2(-3.*shape), E3(shape*shape) {};
 
- wendland_C0_5D(wendland_C0_5D &input) :  radial_basis_function_shape(input) {};
+ wendland_C0_5D(wendland_C0_5D &input) :  radial_basis_function_shape(input), E1(input.E1), E2(input.E2), E3(input.E3) {};
   
+  void set_epsilon(double epsilon_in);
   double operator() (double radius);
   using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -246,14 +252,19 @@ class wendland_C0_5D : public radial_basis_function_shape
 class wendland_C2_5D : public radial_basis_function_shape
 {
 
+ protected:
+  
+  double E1, E2, E3;
+
  public:
   
- wendland_C2_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape) {};
+ wendland_C2_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape), E1(5.*shape), E2(30.*shape*shape), E3(120.*shape*shape*shape) {};
 
- wendland_C2_5D(coordinate input) :  radial_basis_function_shape(input) {};
+ wendland_C2_5D(coordinate input, double shape =1.) :  radial_basis_function_shape(input), E1(5.*shape), E2(30.*shape*shape), E3(120.*shape*shape*shape) {};
 
- wendland_C2_5D(wendland_C2_5D &input) :  radial_basis_function_shape(input) {};
+ wendland_C2_5D(wendland_C2_5D &input) :  radial_basis_function_shape(input), E1(input.E1), E2(input.E2), E3(input.E3) {};
   
+  void set_epsilon(double epsilon_in);
   double operator() (double radius);
   using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
@@ -273,14 +284,19 @@ class wendland_C2_5D : public radial_basis_function_shape
 class wendland_C4_5D : public radial_basis_function_shape
 {
 
+ protected:
+  
+  double E1, E2, E3, E4;
+
  public:
   
- wendland_C4_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape) {};
+ wendland_C4_5D(double x = 0., double y = 0., double z = 0., double shape = 1.) :  radial_basis_function_shape(x,y,z,shape), E1(5.*shape), E2(6.*shape*shape), E3(24.*shape*shape), E4(1008.*shape*shape*shape*shape) {};
 
- wendland_C4_5D(coordinate input) :  radial_basis_function_shape(input) {};
+ wendland_C4_5D(coordinate input, double shape = 1.) :  radial_basis_function_shape(input,shape), E1(5.*shape), E2(6.*shape*shape), E3(24.*shape*shape), E4(1008.*shape*shape*shape*shape) {};
 
- wendland_C4_5D(wendland_C4_5D &input) :  radial_basis_function_shape(input) {};
+ wendland_C4_5D(wendland_C4_5D &input) :  radial_basis_function_shape(input), E1(input.E1), E2(input.E2), E3(input.E3), E4(input.E4) {};
   
+  void set_epsilon(double epsilon_in);
   double operator() (double radius);
   using radial_basis_function::operator();
   double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);

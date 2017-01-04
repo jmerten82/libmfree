@@ -10,51 +10,21 @@ http://www.julianmerten.net
 ***/
 
 #include <mfree/polynomial_terms.h>
-//Work on this function is currently suspended until we implemented 2D tests.
 
-vector<double> row_vector_from_polynomial(vector<double> coordinates, uint pdeg)
+vector<double> row_vector_from_polynomial_1D(double x, unsigned pdeg)
 {
 
-  uint D = coordinates.size();
-  vector<double> out;
+  vector<double> row_vector;
+  row_vector.push_back(1.);
 
-  //special case, constant term
-  out.push_back(1.);
-
-
-
-  //main loop over all wanted p degrees
-  for(uint current_p = 1; current_p <= pdeg; current_p++)
+  for(unsigned i = 1; i <= pdeg; i++)
     {
-      //looping through the available dimension slots
-      vector<uint> = current_combo;
-      vector<uint> = current_combo;
-      current_max = current_p;
-      for(uint current = 0; uint < pdeg; current++)
-	{
-	  for(uint d = 0; d < D; d++)
-	    {
-
-
-	    }
-	}
-
-	}//end dimension loop
-
-
-
-
-
-    }// end p degree loop
-
-
-  return out;
-
-
+      row_vector.push_back(row_vector[i-1]*x);
+    }
+  return row_vector;
 }
 
-
-vector<double> row_vector_from_polynomial_2D(double x, double y, uint pdeg)
+vector<double> row_vector_from_polynomial_2D(double x, double y, unsigned pdeg)
 {
 
   vector<double> row_vector;
@@ -63,39 +33,122 @@ vector<double> row_vector_from_polynomial_2D(double x, double y, uint pdeg)
   x_values.push_back(1.);
   y_values.push_back(1.);
 
-  for(uint i = 1; i <= pdeg; i++)
+  for(unsigned i = 1; i <= pdeg; i++)
     {
-      x_values.push_back(x_values[i]*x);
-      y_values.push_back(y_values[i]*y);
+      x_values.push_back(x_values[i-1]*x);
+      y_values.push_back(y_values[i-1]*y);
     }
 
   row_vector.push_back(1.);
 
-  for(uint i = 1; i <= pdeg; i++)
+  for(unsigned i = 0; i < pdeg; i++)
     {
-      for(uint j = 1; j <= i; j++)
+      unsigned max_grade = i+1;
+      for(unsigned j = 0; j <= max_grade; j++)
 	{
-	  row_vector.push_back(x_values[j+1]*y_values[j-i+1]);
+	  row_vector.push_back(x_values[max_grade-j]*y_values[j]);
 	}
     }
 
   return row_vector;
 }
 
-vector<double> polynomial_support_rhs_column_vector_2D(string selection, uint pdeg)
+vector<double> row_vector_from_polynomial_3D(double x, double y, double z,  unsigned pdeg)
+{
+
+  vector<double> row_vector;
+  vector<double> x_values, y_values, z_values;
+
+  x_values.push_back(1.);
+  y_values.push_back(1.);
+  z_values.push_back(1.);
+
+  for(unsigned i = 1; i <= pdeg; i++)
+    {
+      x_values.push_back(x_values[i-1]*x);
+      y_values.push_back(y_values[i-1]*y);
+      z_values.push_back(z_values[i-1]*z);
+    }
+
+  row_vector.push_back(1.);
+  unsigned counter = 1;  
+
+  for(int i = 0; i < pdeg; i++)
+    {
+      int max = i+1;
+      for(int l = max; l >= 0; l--)
+	{
+	  int max_y = max-l;
+	  for(int m = max_y; m >= 0; m--)
+	    {
+	      int max_z = max-l-m;
+	      for(int n = max_z; n >= 0; n--)
+		{
+		  if(l+m+n == max)
+		    {
+		      cout <<l <<" " <<m <<" " <<n <<endl; 
+		      row_vector.push_back(x_values[l]*y_values[m]*z_values[n]);
+		    }
+		}
+	    }
+	}
+
+    }
+
+  return row_vector;
+}
+
+vector<double> polynomial_support_rhs_column_vector_1D(string selection, unsigned pdeg)
 {
 
   //Calculating length of vector
-  uint length = 1;
-
-  for(uint i = 1; i < pdeg; i++)
-    {
-      length += (i+1);
-    }
+  unsigned length = (pdeg+1);
 
   vector<double> out;
 
-  for(uint i = 0; i < length; i++)
+  for(unsigned i = 0; i < length; i++)
+    {
+      out.push_back(0.);
+    }
+
+  if(selection == "x")
+    {
+      out[1] = 1.;
+    }
+  else if(selection == "xx")
+    {
+      out[2] = 2.;	      
+    }	
+  else if(selection == "xxx")
+    {
+      out[3] = 6.;
+    }
+  else if(selection == "Laplace")
+    {
+      out[2] = 2.;
+    }
+  else if(selection == "Neg_Laplace")
+    {
+      out[2] = 2.;
+    }
+  else
+    {
+      throw invalid_argument("POLYTERMS: Invalid derivative selection");
+    }
+  
+  return out;
+}
+
+
+vector<double> polynomial_support_rhs_column_vector_2D(string selection, unsigned pdeg)
+{
+
+  //Calculating length of vector
+  unsigned length = (pdeg+1)*(pdeg+2)/2;
+
+  vector<double> out;
+
+  for(unsigned i = 0; i < length; i++)
     {
       out.push_back(0.);
     }
@@ -109,7 +162,6 @@ vector<double> polynomial_support_rhs_column_vector_2D(string selection, uint pd
     {
       out[2] = 1.;
     }
-
   else if(selection == "xx")
     {
       out[3] = 2.;	      
@@ -146,9 +198,122 @@ vector<double> polynomial_support_rhs_column_vector_2D(string selection, uint pd
   else if(selection == "Neg_Laplace")
     {
       out[3] = 2.;
-      out[5] = 2.; 
+      out[5] = -2.; 
     }
 
+  else
+    {
+      throw invalid_argument("POLYTERMS: Invalid derivative selection");
+    }
+  
+  return out;
+
+}
+
+vector<double> polynomial_support_rhs_column_vector_3D(string selection, unsigned pdeg)
+{
+
+  //Calculating length of vector
+  unsigned length = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
+
+
+  vector<double> out;
+
+  for(unsigned i = 0; i < length; i++)
+    {
+      out.push_back(0.);
+    }
+
+  if(selection == "x")
+    {
+      out[1] = 1.;
+    }
+
+  else if(selection == "y")
+    {
+      out[2] = 1.;
+    }
+
+  else if(selection == "z")
+    {
+      out[3] = 1.;	      
+    }	
+  else if(selection == "xx")
+    {
+      out[4] = 2.;
+    }
+  else if(selection == "xy")
+    {
+      out[5] = 1.;
+    }
+  else if(selection == "xz")
+    {
+      out[6] = 1.;
+    }
+  else if(selection == "yy")
+    {
+      out[7] = 2.;
+    }
+  else if(selection == "yz")
+    {
+      out[8] = 1.;
+    }
+  else if(selection == "zz")
+    {
+      out[9] = 2.;
+    }
+  else if(selection == "xxx")
+    {
+      out[10] = 6.;
+    }
+  else if(selection == "xxy")
+    {
+      out[11] = 2.;
+    }
+  else if(selection == "xxz")
+    {
+      out[12] = 2.;
+    }
+  else if(selection == "xyy")
+    {
+      out[13] = 2.; 
+    }
+  else if(selection == "xyz")
+    {
+      out[14] = 1.; 
+    }
+  else if(selection == "xzz")
+    {
+      out[15] = 2.;
+    }
+  else if(selection == "yyy")
+    {
+      out[16] = 6.; 
+    }
+  else if(selection == "yyz")
+    {
+      out[17] = 2.; 
+    }
+
+  else if(selection == "yzz")
+    {
+      out[18] = 2.;
+    }
+  else if(selection == "zzz")
+    {
+      out[19] = 6.; 
+    }
+
+  else if(selection == "Laplace")
+    {
+      out[4] = 2.;
+      out[7] = 2.;
+    }
+  else if(selection == "Neg_Laplace")
+    {
+      out[4] = 2.;
+      out[7] = -2.; 
+    }
   else
     {
       throw invalid_argument("POLYTERMS: Invalid derivative selection");

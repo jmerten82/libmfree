@@ -1122,7 +1122,7 @@ double mesh_free_2D::create_finite_differences_weights(string selection, uint pd
       throw logic_error("UNSTRUC_GRID: The kD-tree size is invalid.");
     }
   int num_neighbours = kD_tree.size() / num_nodes;
-  int polynomial = (pdeg+1)*(pdeg+2)/2.;
+  int polynomial = (pdeg+1)*(pdeg+2)/2;
 
 
 
