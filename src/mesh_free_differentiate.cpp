@@ -86,9 +86,42 @@ double mesh_free_differentiate::differentiate(vector<double> *in, string selecti
       (*out)[i] = value;
     }
   return condition;
+}
 
+double mesh_free_differentiate::differentiate(vector<double> *in, string selection, radial_basis_function *RBF, unsigned pdeg,  vector<double> *out)
+{
 
+  cout <<"using this one." <<endl;
+  //Checking the size of the input vector
 
+  if(in->size() != num_nodes)
+    {
+      throw invalid_argument("UNSTRUC_GRID: Input vector for diff is invalid.");
+    }
+
+  //Creating the finite differences
+
+  vector<double> weights;
+  double condition = create_finite_differences_weights(selection,pdeg, &weights, RBF);
+  out->resize(num_nodes);
+  int num_neighbours = kD_tree.size() / num_nodes;
+  double value;
+  int seed, pos;
+
+  //Performing the finite differencing
+
+  for(int i = 0; i < num_nodes; i++)
+    {
+      value = 0.;
+      seed = i*num_neighbours;
+      for(int j = 0; j < num_neighbours; j++)
+	{
+	  pos = kD_tree[seed+j];
+	  value += (*in)[pos]*weights[seed+j];
+	}
+      (*out)[i] = value;
+    }
+  return condition;
 }
 
 
@@ -256,6 +289,12 @@ double mesh_free_1D::create_finite_differences_weights(string selection, vector<
 
 
   return gsl_stats_mean(&condition[0], 1, num_nodes);
+}
+
+double mesh_free_1D::create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF)
+{
+
+  return 0.;
 }
 
 double mesh_free_1D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
@@ -1107,9 +1146,8 @@ double mesh_free_2D::create_finite_differences_weights(string selection, vector<
   return gsl_stats_mean(&condition[0], 1, num_nodes);
 }
 
-double mesh_free_2D::create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF)
+double mesh_free_2D::create_finite_differences_weights(string selection, unsigned pdeg,  vector<double> *weights, radial_basis_function *RBF)
 {
-
   //Checking if the tree is up to date
   if(kD_update)
     {
@@ -1123,7 +1161,6 @@ double mesh_free_2D::create_finite_differences_weights(string selection, uint pd
     }
   int num_neighbours = kD_tree.size() / num_nodes;
   int polynomial = (pdeg+1)*(pdeg+2)/2;
-
 
 
 
@@ -1169,15 +1206,13 @@ double mesh_free_2D::create_finite_differences_weights(string selection, uint pd
 	{
 	  gsl_vector_set(b,l+num_neighbours,missing_columns[l]);
 	}
-
       //Main matrix part, looping over all neighbours. 
       for(int i = 0; i < num_neighbours; i++)
 	{
 	  //Getting node position and setting RBF to reference
 	  x_node = coordinates[kD_tree[tree_position_seed+i]*2];
 	  y_node = coordinates[kD_tree[tree_position_seed+i]*2+1];
-	  RBF->set_coordinate_offset(x_eval, y_eval);
-
+	  RBF->set_coordinate_offset(x_node, y_node);
 	  //Setting main body of A matrix
 	  for(int j = i+1; j < num_neighbours; j++)
 	    {
@@ -1201,57 +1236,57 @@ double mesh_free_2D::create_finite_differences_weights(string selection, uint pd
 
 	  //Creating the missing entries in the coefficient matrix
 	  //and the main part of the result vector
-
 	  vector<double> missing_rows = row_vector_from_polynomial_2D(x_node-x_eval,y_node-y_eval, pdeg);
 	  for(uint l = 0; l < missing_rows.size(); l++)
 	    {
 	      gsl_matrix_set(A,i,l+num_neighbours,missing_rows[l]);
+	      gsl_matrix_set(A,l+num_neighbours,i,missing_rows[l]);
 	    }
  
 	  //Creating the data vector	  
 	  if(selection == "x")
 	    {
-	      gsl_vector_set(b,i,RBF->Dx(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dx(x_eval,y_eval));
 	    }	  
 	  else if(selection == "y")
 	    {
-	      gsl_vector_set(b,i,RBF->Dy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dy(x_eval,y_eval));
 	    }
 	  else if(selection == "xx")
 	    {
-	      gsl_vector_set(b,i,RBF->Dxx(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dxx(x_eval,y_eval));
 	    }	
 	  else if(selection == "yy")
 	    {
-	      gsl_vector_set(b,i,RBF->Dyy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dyy(x_eval,y_eval));
 	    }
 	  else if(selection == "xy")
 	    {
-	      gsl_vector_set(b,i,RBF->Dxy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dxy(x_eval,y_eval));
 	    }
 	  else if(selection == "xxx")
 	    {
-	      gsl_vector_set(b,i,RBF->Dxxx(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dxxx(x_eval,y_eval));
 	    }
 	  else if(selection == "yyy")
 	    {
-	      gsl_vector_set(b,i,RBF->Dyyy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dyyy(x_eval,y_eval));
 	    }
 	  else if(selection == "xxy")
 	    {
-	      gsl_vector_set(b,i,RBF->Dxxy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dxxy(x_eval,y_eval));
 	    }
 	  else if(selection == "xyy")
 	    {
-	      gsl_vector_set(b,i,RBF->Dxyy(x_node,y_node));
+	      gsl_vector_set(b,i,RBF->Dxyy(x_eval,y_eval));
 	    }
 	  else if(selection == "Laplace")
 	    {
-	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_node,y_node)+RBF->Dyy(x_node,y_node)));
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_eval,y_eval)+RBF->Dyy(x_eval,y_eval)));
 	    }
 	  else if(selection == "Neg_Laplace")
 	    {
-	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_node,y_node)-RBF->Dyy(x_node,y_node)));
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(x_eval,y_eval)-RBF->Dyy(x_eval,y_eval)));
 	    }
 	}
 
@@ -1813,6 +1848,12 @@ double mesh_free_3D::create_finite_differences_weights(string selection, vector<
 
 
   return gsl_stats_mean(&condition[0], 1, num_nodes);
+}
+
+double mesh_free_3D::create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF)
+{
+
+  return 0.;
 }
 
 

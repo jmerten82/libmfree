@@ -67,6 +67,13 @@ class mesh_free_differentiate : public mesh_free
   virtual double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF) = 0;
 
   /*
+    This function is idential to the above but allows for an additional 
+    polynomial support term of arbitrary degree. 
+  */
+
+  virtual double create_finite_differences_weights(string selection, unsigned pdeg, vector<double> *weights, radial_basis_function *RBF) = 0;
+
+  /*
     The same function as above but with a shaped RBF and with a varying
     shape parameter.
   */
@@ -149,6 +156,13 @@ class mesh_free_differentiate : public mesh_free
 
   virtual double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *out, int nn = 16) = 0;
 
+  /*
+    This should be the last version of this routine which now includes the 
+    weight creation function which accounts for polynomial terms of arbitrary
+    degree.
+  */ 
+
+  double differentiate(vector<double> *in, string selection, radial_basis_function *RBF, unsigned pdeg,  vector<double> *out);
 };
 
 
@@ -196,6 +210,14 @@ class mesh_free_1D : public mesh_free_differentiate
   */
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This implementation is still somewhat experiemental and adds polynomial 
+    support of arbitrary order to the creation of the weight. 
+    The maximum polynomial order must be specified.
+  */
+
+  double create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF);
 
   /*
     This line is needed because of function hiding in derived classes. 
@@ -349,6 +371,14 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+
+  /*
+    This implementation is still somewhat experiemental and adds polynomial 
+    support of arbitrary order to the creation of the weight. 
+    The maximum polynomial order must be specified.
+  */
+
+  double create_finite_differences_weights(string selection, uint pdeg,  vector<double> *weights, radial_basis_function *RBF);
 
   /*
     This line is needed because of function hiding in derived classes. 

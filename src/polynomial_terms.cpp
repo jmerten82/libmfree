@@ -32,15 +32,13 @@ vector<double> row_vector_from_polynomial_2D(double x, double y, unsigned pdeg)
 
   x_values.push_back(1.);
   y_values.push_back(1.);
-
-  for(unsigned i = 1; i <= pdeg; i++)
+  for(int i = 1; i <= pdeg; i++)
     {
       x_values.push_back(x_values[i-1]*x);
       y_values.push_back(y_values[i-1]*y);
     }
 
   row_vector.push_back(1.);
-
   for(unsigned i = 0; i < pdeg; i++)
     {
       unsigned max_grade = i+1;
@@ -86,7 +84,6 @@ vector<double> row_vector_from_polynomial_3D(double x, double y, double z,  unsi
 		{
 		  if(l+m+n == max)
 		    {
-		      cout <<l <<" " <<m <<" " <<n <<endl; 
 		      row_vector.push_back(x_values[l]*y_values[m]*z_values[n]);
 		    }
 		}
@@ -113,23 +110,38 @@ vector<double> polynomial_support_rhs_column_vector_1D(string selection, unsigne
 
   if(selection == "x")
     {
-      out[1] = 1.;
+      if(pdeg > 0)
+	{
+	  out[1] = 1.;
+	}
     }
   else if(selection == "xx")
     {
-      out[2] = 2.;	      
+      if(pdeg > 1)
+	{
+	  out[2] = 2.;
+	}	      
     }	
   else if(selection == "xxx")
     {
-      out[3] = 6.;
+      if(pdeg > 2)
+	{
+	  out[3] = 6.;
+	}
     }
   else if(selection == "Laplace")
     {
-      out[2] = 2.;
+      if(pdeg > 1)
+	{
+	  out[2] = 2.;
+	}
     }
   else if(selection == "Neg_Laplace")
     {
-      out[2] = 2.;
+      if(pdeg > 1)
+	{
+	  out[2] = 2.;
+	}
     }
   else
     {
@@ -155,50 +167,83 @@ vector<double> polynomial_support_rhs_column_vector_2D(string selection, unsigne
 
   if(selection == "x")
     {
-      out[1] = 1.;
+      if(pdeg > 0)
+	{
+	  out[1] = 1.;
+	}
     }
 
   else if(selection == "y")
     {
-      out[2] = 1.;
+      if(pdeg > 0)
+	{
+	  out[2] = 1.;
+	}
     }
   else if(selection == "xx")
     {
-      out[3] = 2.;	      
+      if(pdeg > 1)
+	{
+	  out[3] = 2.;
+	}	      
     }	
   else if(selection == "yy")
     {
-      out[5] = 2.;
+      if(pdeg > 1)
+	{
+	  out[5] = 2.;
+	}
     }
   else if(selection == "xy")
     {
-      out[4] = 1.;
+      if(pdeg > 1)
+	{
+	  out[4] = 1.;
+	}
     }
   else if(selection == "xxx")
     {
-      out[6] = 6.;
+      if(pdeg > 2)
+	{
+	  out[6] = 6.;
+	}
     }
   else if(selection == "yyy")
     {
-      out[9] = 6.;
+      if(pdeg > 2)
+	{
+	  out[9] = 6.;
+	}
     }
   else if(selection == "xxy")
     {
-      out[7] = 2.;
+      if(pdeg > 2)
+	{
+	  out[7] = 2.;
+	}
     }
   else if(selection == "xyy")
     {
-      out[8] = 2.;
+      if(pdeg > 2)
+	{
+	  out[8] = 2.;
+	}
     }
   else if(selection == "Laplace")
     {
-      out[3] = 2.;
-      out[5] = 2.;
+      if(pdeg > 1)
+	{
+	  out[3] = 2.;
+	  out[5] = 2.;
+	}
     }
   else if(selection == "Neg_Laplace")
     {
-      out[3] = 2.;
-      out[5] = -2.; 
+      if(pdeg > 1)
+	{
+	  out[3] = 2.;
+	  out[5] = -2.;
+	} 
     }
 
   else
@@ -226,93 +271,156 @@ vector<double> polynomial_support_rhs_column_vector_3D(string selection, unsigne
 
   if(selection == "x")
     {
-      out[1] = 1.;
+      if(pdeg > 0)
+	{
+	  out[1] = 1.;
+	}
     }
 
   else if(selection == "y")
     {
-      out[2] = 1.;
+      if(pdeg > 0)
+	{
+	  out[2] = 1.;
+	}
     }
 
   else if(selection == "z")
     {
-      out[3] = 1.;	      
+      if(pdeg > 0)
+	{
+	  out[3] = 1.;
+	}	      
     }	
   else if(selection == "xx")
     {
-      out[4] = 2.;
+      if(pdeg > 1)
+	{
+	  out[4] = 2.;
+	}
     }
   else if(selection == "xy")
     {
-      out[5] = 1.;
+      if(pdeg > 1)
+	{
+	  out[5] = 1.;
+	}
     }
   else if(selection == "xz")
     {
-      out[6] = 1.;
+      if(pdeg > 1)
+	{
+	  out[6] = 1.;
+	}
     }
   else if(selection == "yy")
     {
-      out[7] = 2.;
+      if(pdeg > 1)
+	{
+	  out[7] = 2.;
+	}
     }
   else if(selection == "yz")
     {
-      out[8] = 1.;
+      if(pdeg > 1)
+	{
+	  out[8] = 1.;
+	}
     }
   else if(selection == "zz")
     {
-      out[9] = 2.;
+      if(pdeg > 1)
+	{
+	  out[9] = 2.;
+	}
     }
   else if(selection == "xxx")
     {
-      out[10] = 6.;
+      if(pdeg > 2)
+	{
+	  out[10] = 6.;
+	}
     }
   else if(selection == "xxy")
     {
-      out[11] = 2.;
+      if(pdeg > 2)
+	{
+	  out[11] = 2.;
+	}
     }
   else if(selection == "xxz")
     {
-      out[12] = 2.;
+      if(pdeg > 2)
+	{
+	  out[12] = 2.;
+	}
     }
   else if(selection == "xyy")
     {
-      out[13] = 2.; 
+      if(pdeg > 2)
+	{
+	  out[13] = 2.;
+	} 
     }
   else if(selection == "xyz")
     {
-      out[14] = 1.; 
+      if(pdeg > 2)
+	{
+	  out[14] = 1.;
+	} 
     }
   else if(selection == "xzz")
     {
-      out[15] = 2.;
+      if(pdeg > 2)
+	{
+	  out[15] = 2.;
+	}
     }
   else if(selection == "yyy")
     {
-      out[16] = 6.; 
+      if(pdeg > 2)
+	{
+	  out[16] = 6.;
+	} 
     }
   else if(selection == "yyz")
     {
-      out[17] = 2.; 
+      if(pdeg > 2)
+	{
+	  out[17] = 2.; 
+	}
     }
 
   else if(selection == "yzz")
     {
-      out[18] = 2.;
+      if(pdeg > 2)
+	{
+	  out[18] = 2.;
+	}
     }
   else if(selection == "zzz")
     {
-      out[19] = 6.; 
+      if(pdeg > 2)
+	{
+	  out[19] = 6.;
+	} 
     }
 
   else if(selection == "Laplace")
     {
-      out[4] = 2.;
-      out[7] = 2.;
+      if(pdeg > 1)
+	{
+	  out[4] = 2.;
+	  out[7] = 2.;
+	}
     }
   else if(selection == "Neg_Laplace")
     {
-      out[4] = 2.;
-      out[7] = -2.; 
+      if(pdeg > 1)
+	{
+	  out[4] = 2.;
+	  out[7] = -2.; 
+	}
     }
   else
     {
