@@ -233,16 +233,16 @@ vector<double> polynomial_support_rhs_column_vector_2D(string selection, unsigne
     {
       if(pdeg > 1)
 	{
-	  out[3] = 2.;
-	  out[5] = 2.;
+	  out[3] = 1.;
+	  out[5] = 1.;
 	}
     }
   else if(selection == "Neg_Laplace")
     {
       if(pdeg > 1)
 	{
-	  out[3] = 2.;
-	  out[5] = -2.;
+	  out[3] = 1.;
+	  out[5] = -1.;
 	} 
     }
 
@@ -410,16 +410,16 @@ vector<double> polynomial_support_rhs_column_vector_3D(string selection, unsigne
     {
       if(pdeg > 1)
 	{
-	  out[4] = 2.;
-	  out[7] = 2.;
+	  out[4] = 1.;
+	  out[7] = 1.;
 	}
     }
   else if(selection == "Neg_Laplace")
     {
       if(pdeg > 1)
 	{
-	  out[4] = 2.;
-	  out[7] = -2.; 
+	  out[4] = 1.;
+	  out[7] = -1.; 
 	}
     }
   else

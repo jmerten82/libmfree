@@ -91,7 +91,6 @@ double mesh_free_differentiate::differentiate(vector<double> *in, string selecti
 double mesh_free_differentiate::differentiate(vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out)
 {
 
-  cout <<"using this one." <<endl;
   //Checking the size of the input vector
 
   if(in->size() != num_nodes)
