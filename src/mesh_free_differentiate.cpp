@@ -309,7 +309,7 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+4,num_neighbours+4);
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -612,7 +612,7 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+4,num_neighbours+4);
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -955,7 +955,7 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(nn+4,nn+4);
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -1099,8 +1099,97 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
 
 }
 
+double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
+{
+
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 1)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
 
 
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim; 
+
+
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = pdeg+1;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+
+
+
+
+}
+
+double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+{
+
+
+}
 
 mesh_free_2D::mesh_free_2D(mesh_free_2D &input)
 {
@@ -1825,7 +1914,7 @@ double mesh_free_2D::create_finite_differences_weights(string selection, unsigne
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+10,num_neighbours+10);
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -2308,18 +2397,17 @@ double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<do
  //Performing flann nearest neighbours search
   index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
 
-
+  int polynomial = (pdeg+1)*(pdeg+2)/2;
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(nn+10,nn+10);
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
   gsl_vector *b = gsl_vector_calloc(A->size1);
   gsl_vector *x = gsl_vector_calloc(A->size1);
   vector<double> condition;
-  int polynomial = (pdeg+1)*(pdeg+2)/2;
 
   //Allocating space for local coordinates in stencil
   vector<double> local_coordinates;
@@ -2487,6 +2575,17 @@ double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<do
 
 
  return output;
+
+}
+
+double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
+{
+
+}
+
+double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+{
+
 
 }
 
@@ -2751,7 +2850,7 @@ double mesh_free_3D::create_finite_differences_weights(string selection, uint pd
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+10,num_neighbours+10);
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -3226,7 +3325,7 @@ double mesh_free_3D::create_finite_differences_weights(string selection, unsigne
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+10,num_neighbours+10);
+  gsl_matrix *A = gsl_matrix_calloc(num_neighbours+polynomial,num_neighbours+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
@@ -3736,17 +3835,18 @@ double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<do
  //Performing flann nearest neighbours search
   index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
 
+  int polynomial = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
+
 
   //Allocating work space for linear system to get finite differencing 
   //weights
-  gsl_matrix *A = gsl_matrix_calloc(nn+10,nn+10);
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
   gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
   gsl_vector *S = gsl_vector_calloc(A->size1);
   gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
   gsl_vector *b = gsl_vector_calloc(A->size1);
   gsl_vector *x = gsl_vector_calloc(A->size1);
   vector<double> condition;
-  int polynomial = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
 
   //Allocating space for local coordinates in stencil
   vector<double> local_coordinates;
@@ -3963,5 +4063,16 @@ double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<do
     }
     
   return output;
+}
+
+double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
+{
+
+}
+
+double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+{
+
+
 }
 

@@ -179,6 +179,27 @@ class mesh_free_differentiate : public mesh_free
   */ 
 
   double differentiate(vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF,  vector<double> *out);
+
+  /*
+    This new routine introduces interpolation with polynomial support. This is less general than 
+    the routines which are in the mesh_free class since the appearance of the polynomial support
+    strongly depends onthe dimensionality of the mesh-free domain. This is also why the method is 
+    pure. The actual implementations are given for 1D, 2D and 3D mesh-free domain. 
+    It needs the coordinates of the output nodes in the usual form, \
+    the input function at each node of the current mesh, an RBF.
+    The degree of polynomial support has to be provided in this overloaded function. 
+    Also the numbers of neighbours to use can be chosen and an eventual stride in the output 
+    coordinate vector.
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0) = 0;
+
+  /*
+    This method is identical to the one above but allows for an adaptive, per-node choice of the
+    shape parameter. 
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0) = 0;
 };
 
 
@@ -260,6 +281,18 @@ class mesh_free_1D : public mesh_free_differentiate
   
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  /*
+    This is the new interpolation function with polynomial support of arbitrary order, as described
+    mesh_free_differentiate.
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0);
+
+  /*
+    And, accordingly, the version with adaptive shape parameter. 
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
 
 };
 
@@ -358,6 +391,19 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  /*
+    This is the new interpolation function with polynomial support of arbitrary order, as described
+    mesh_free_differentiate.
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0);
+
+  /*
+    And, accordingly, the version with adaptive shape parameter. 
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
+
 };
 
 
@@ -444,6 +490,19 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
+
+  /*
+    This is the new interpolation function with polynomial support of arbitrary order, as described
+    mesh_free_differentiate.
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0);
+
+  /*
+    And, accordingly, the version with adaptive shape parameter. 
+  */
+
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
 
 };
 
