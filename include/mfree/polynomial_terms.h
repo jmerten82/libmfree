@@ -22,19 +22,19 @@ using namespace std;
   This is a special case for initial test implementations which implements polynomial support for a one-dimensional domain.
 */
 
-vector<double> row_vector_from_polynomial_1D(double x, unsigned pdeg = 0);
+vector<double> row_vector_from_polynomial_1D(double x, unsigned pdeg);
 
 /*
   This is a special case for initial test implementations which implements polynomial support for a two-dimensional domain.
 */
 
-vector<double> row_vector_from_polynomial_2D(double x, double y, unsigned pdeg = 0);
+vector<double> row_vector_from_polynomial_2D(double x, double y, unsigned pdeg);
 
 /*
   This is a special case for initial test implementations which implements polynomial support for a three-dimensional domain.
 */
 
-vector<double> row_vector_from_polynomial_3D(double x, double y, double z,  unsigned pdeg = 0);
+vector<double> row_vector_from_polynomial_3D(double x, double y, double z,  unsigned pdeg);
 
 /*
   This 1D helper function delivers the polynomial support right hand side column

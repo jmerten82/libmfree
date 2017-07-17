@@ -192,14 +192,14 @@ class mesh_free_differentiate : public mesh_free
     coordinate vector.
   */
 
-  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0) = 0;
+  virtual double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn = 16, int stride = 0) = 0;
 
   /*
     This method is identical to the one above but allows for an adaptive, per-node choice of the
     shape parameter. 
   */
 
-  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0) = 0;
+  virtual double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0) = 0;
 };
 
 

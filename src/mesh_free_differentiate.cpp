@@ -952,6 +952,7 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
  //Performing flann nearest neighbours search
   index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
 
+  unsigned int polynomial = pdeg+1;
 
   //Allocating work space for linear system to get finite differencing 
   //weights
@@ -962,7 +963,6 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
   gsl_vector *b = gsl_vector_calloc(A->size1);
   gsl_vector *x = gsl_vector_calloc(A->size1);
   vector<double> condition;
-  int polynomial = pdeg+1;
 
   //Allocating space for local coordinates in stencil
   vector<double> local_coordinates;
@@ -1179,15 +1179,284 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
   gsl_vector *x = gsl_vector_calloc(A->size1);
   vector<double> condition;
 
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
 
+  //Allocating all helper quantities in the process
+  double x_eval, value,min,max;
+  int tree_position_seed, index1, index2;
 
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn);
 
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global];
 
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i] = coordinates[interpolant_tree[tree_position_seed+i]] - x_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      value = (*RBF)(local_coordinates[i] - local_coordinates[j]);
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_1D(local_coordinates[i], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i];
+      value = 0;
+      for(int j = 0; j < knn; j++)
+	{
+	  value += (*RBF)(x_eval - coordinates[interpolant_tree[tree_position_seed+j]])*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
 double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
+  double shape_save = RBF->show_epsilon();
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 1)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
+
+
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim;
+
+  if(adaptive_shape_parameter->size() < num_nodes_interpolant)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of adaptive shape parameters.");
+    } 
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = pdeg+1;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval, value,min,max;
+  int tree_position_seed, index1, index2;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn);
+
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global];
+      RBF->set_epsilon((*adaptive_shape_parameter)[global]);
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i] = coordinates[interpolant_tree[tree_position_seed+i]] - x_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      value = (*RBF)(local_coordinates[i] - local_coordinates[j]);
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_1D(local_coordinates[i], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i];
+      value = 0;
+      for(int j = 0; j < knn; j++)
+	{
+	  value += (*RBF)(x_eval - coordinates[interpolant_tree[tree_position_seed+j]])*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  RBF->set_epsilon(shape_save);
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 
 }
 
@@ -2581,12 +2850,390 @@ double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<do
 double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
 {
 
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 2)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
+
+
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim; 
+
+
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = (pdeg+1)*(pdeg+2)/2;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval,y_eval, value,min,max,x_1, y_1;
+  int tree_position_seed, index1, index2;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn*2);
+
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global*2];
+      y_eval = interpolant_coordinates[global*2+1];
+
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i*2] = coordinates[interpolant_tree[tree_position_seed+i]*2] - x_eval;
+	  local_coordinates[i*2+1] = coordinates[interpolant_tree[tree_position_seed+i]*2+1] - y_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      x_1 = local_coordinates[i*2] - local_coordinates[j*2];
+	      x_1 *= x_1;
+	      y_1 = local_coordinates[i*2+1] - local_coordinates[j*2+1];
+	      y_1 *= y_1;
+	      x_1 += y_1;
+	      value = (*RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_2D(local_coordinates[i*2],local_coordinates[i*2+1], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i*2];
+      y_eval = interpolant_coordinates[i*2+1];
+      value = 0.;
+      for(int j = 0; j < knn; j++)
+	{
+	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*2];
+	  x_1 *= x_1;
+	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*2+1];
+	  y_1 *= y_1;
+	  x_1 += y_1;
+	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
 double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
+  double shape_save = RBF->show_epsilon();
 
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 2)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
+
+
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim; 
+
+  if(adaptive_shape_parameter->size() < num_nodes_interpolant)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of adaptive shape parameters.");
+    }
+
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = (pdeg+1)*(pdeg+2)/2;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval,y_eval, value,min,max,x_1, y_1;
+  int tree_position_seed, index1, index2;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn*2);
+
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global*2];
+      y_eval = interpolant_coordinates[global*2+1];
+      RBF->set_epsilon((*adaptive_shape_parameter)[global]);
+
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i*2] = coordinates[interpolant_tree[tree_position_seed+i]*2] - x_eval;
+	  local_coordinates[i*2+1] = coordinates[interpolant_tree[tree_position_seed+i]*2+1] - y_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      x_1 = local_coordinates[i*2] - local_coordinates[j*2];
+	      x_1 *= x_1;
+	      y_1 = local_coordinates[i*2+1] - local_coordinates[j*2+1];
+	      y_1 *= y_1;
+	      x_1 += y_1;
+	      value = (*RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_2D(local_coordinates[i*2],local_coordinates[i*2+1], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i*2];
+      y_eval = interpolant_coordinates[i*2+1];
+      value = 0.;
+      for(int j = 0; j < knn; j++)
+	{
+	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*2];
+	  x_1 *= x_1;
+	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*2+1];
+	  y_1 *= y_1;
+	  x_1 += y_1;
+	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  RBF->set_epsilon(shape_save);
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
 
@@ -4067,12 +4714,406 @@ double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<do
 
 double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
 {
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 3)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
+
+
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim; 
+
+
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval,y_eval,z_eval, value,min,max,x_1, y_1, z_1;
+  int tree_position_seed, index1, index2;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn*3);
+
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global*3];
+      y_eval = interpolant_coordinates[global*3+1];
+      z_eval = interpolant_coordinates[global*3+2];
+
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i*3] = coordinates[interpolant_tree[tree_position_seed+i]*3] - x_eval;
+	  local_coordinates[i*3+1] = coordinates[interpolant_tree[tree_position_seed+i]*3+1] - y_eval;
+	  local_coordinates[i*3+2] = coordinates[interpolant_tree[tree_position_seed+i]*3+2] - z_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      x_1 = local_coordinates[i*3] - local_coordinates[j*3];
+	      x_1 *= x_1;
+	      y_1 = local_coordinates[i*3+1] - local_coordinates[j*3+1];
+	      y_1 *= y_1;
+	      z_1 = local_coordinates[i*3+2] - local_coordinates[j*3+2];
+	      z_1 *= z_1;
+	      x_1 += y_1 + z_1;
+	      value = (*RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_3D(local_coordinates[i*3],local_coordinates[i*3+1],local_coordinates[i*3+2], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i*3];
+      y_eval = interpolant_coordinates[i*3+1];
+      z_eval = interpolant_coordinates[i*3+2];
+
+      value = 0.;
+      for(int j = 0; j < knn; j++)
+	{
+	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*3];
+	  x_1 *= x_1;
+	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+1];
+	  y_1 *= y_1;
+	  z_1 = z_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+2];
+	  z_1 *= z_1;
+	  x_1 += y_1 + z_1;
+	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 
 }
 
 double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
+  double shape_save = RBF->show_epsilon();
 
+  if(stride == 0)
+    {
+      stride = dim;
+    }
+
+  //Checking for validity of the input data
+
+  if(input_function->size() != num_nodes)
+    {
+      throw invalid_argument("MFREE: Input function for interpolate is invalid.");
+    }
+
+  if(output_grid->size() < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(output_grid->size()%stride != 0 && output_grid->size()%stride < dim)
+    {
+      throw invalid_argument("MFREE: Input grid for interpolate is invalid.");
+    }
+
+  if(stride < 3)
+    {
+      throw invalid_argument("MFREE: Stride for input grid invalid.");
+    }
+
+  if(knn < 1)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of neighbours to interpolate.");
+    }
+
+
+
+  //Getting interpolant coordinates
+  vector<double> interpolant_coordinates;
+
+  for(int i = 0; i < output_grid->size(); i += stride)
+    {
+      for(int j = 0; j < dim; j++)
+	{
+	  interpolant_coordinates.push_back((*output_grid)[i+j]);
+	}
+    }
+  int num_nodes_interpolant = interpolant_coordinates.size()/dim; 
+
+  if(adaptive_shape_parameter->size() < num_nodes_interpolant)
+    {
+      throw invalid_argument("MFREE: Unsufficient number of adaptive shape parameters.");
+    }
+
+
+  //Building the tree for the output grid
+  vector<int> interpolant_tree;
+  vector<double> interpolant_distances;
+  interpolant_tree.resize(knn*num_nodes_interpolant);
+  interpolant_distances.resize(knn*num_nodes_interpolant);
+
+  flann::Matrix<double> flann_dataset(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_dataset_interpolant(&interpolant_coordinates[0],num_nodes_interpolant,dim);
+  flann::Matrix<int> flann_tree(&interpolant_tree[0],num_nodes_interpolant,knn);
+  flann::Matrix<double> flann_distances(&interpolant_distances[0],num_nodes_interpolant,knn);
+
+  flann::Index<flann::L2<double> > index(flann_dataset, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+  index.knnSearch(flann_dataset_interpolant, flann_tree, flann_distances, knn, flann::SearchParams(128));
+
+  unsigned int polynomial = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
+
+  //For each individual output point, build the linear system and calculate interpolant
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(knn+polynomial,knn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Setting the stage for the output coefficients
+  vector<double> lambda;
+  lambda.resize(interpolant_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval,y_eval,z_eval, value,min,max,x_1, y_1, z_1;
+  int tree_position_seed, index1, index2;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(knn*3);
+
+  //Looping through all outptu grid nodes
+  for(int global = 0; global < num_nodes_interpolant; global++)
+    {
+      x_eval = interpolant_coordinates[global*3];
+      y_eval = interpolant_coordinates[global*3+1];
+      z_eval = interpolant_coordinates[global*3+2];
+      RBF->set_epsilon((*adaptive_shape_parameter)[global]);
+
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*knn;
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < knn; i++)
+	{
+	  local_coordinates[i*3] = coordinates[interpolant_tree[tree_position_seed+i]*3] - x_eval;
+	  local_coordinates[i*3+1] = coordinates[interpolant_tree[tree_position_seed+i]*3+1] - y_eval;
+	  local_coordinates[i*3+2] = coordinates[interpolant_tree[tree_position_seed+i]*3+2] - z_eval;
+	}
+
+      //Looping through neighbour combinations and calculating distances
+      for(int i = 0; i < knn; i++)
+	{	    
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < knn; j++)
+	    {
+	      x_1 = local_coordinates[i*3] - local_coordinates[j*3];
+	      x_1 *= x_1;
+	      y_1 = local_coordinates[i*3+1] - local_coordinates[j*3+1];
+	      y_1 *= y_1;
+	      z_1 = local_coordinates[i*3+2] - local_coordinates[j*3+2];
+	      z_1 *= z_1;
+	      x_1 += y_1 + z_1;
+	      value = (*RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_3D(local_coordinates[i*3],local_coordinates[i*3+1],local_coordinates[i*3+2], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+knn,missing_rows[l]);
+	      gsl_matrix_set(A,l+knn,i,missing_rows[l]);
+	    }
+	  //Setting the result vector
+	  gsl_vector_set(b,i,(*input_function)[interpolant_tree[tree_position_seed+i]]);
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < knn; i++)
+	{
+	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+
+  gsl_matrix_free(A);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+
+  //Calculating the interpolant
+
+  output_function->resize(num_nodes_interpolant);
+
+  for(int i = 0; i < num_nodes_interpolant; i++)
+    {
+      tree_position_seed = i*knn;
+      x_eval = interpolant_coordinates[i*3];
+      y_eval = interpolant_coordinates[i*3+1];
+      z_eval = interpolant_coordinates[i*3+2];
+
+      value = 0.;
+      for(int j = 0; j < knn; j++)
+	{
+	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*3];
+	  x_1 *= x_1;
+	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+1];
+	  y_1 *= y_1;
+	  z_1 = z_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+2];
+	  z_1 *= z_1;
+	  x_1 += y_1 + z_1;
+	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
+	}
+      (*output_function)[i] = value;
+    }
+
+  RBF->set_epsilon(shape_save);
+
+  return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
