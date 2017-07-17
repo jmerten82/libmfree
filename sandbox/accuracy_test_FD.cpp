@@ -1,4 +1,4 @@
-/*** accuracy_test.cpp
+/*** accuracy_test_FD.cpp
      This sandbox routine tests in detail the accuracy of RBF FD.
      
      Julian Merten
