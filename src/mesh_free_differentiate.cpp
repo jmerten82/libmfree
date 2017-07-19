@@ -343,6 +343,12 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
 
@@ -648,6 +654,12 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
 
@@ -680,7 +692,7 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
 	      //Evaluating radial basis function
 	      //This square root is not super efficient
 	      //Should be implemented in r^2 manner
-	      value = (* RBF)(x_1);
+	      value = (* RBF)(abs(x_1));
 	      gsl_matrix_set(A,i,j,value);
 	      gsl_matrix_set(A,j,i,value);
 	    }
@@ -991,6 +1003,12 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*nn;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
 
@@ -1023,7 +1041,7 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
 	      //Evaluating radial basis function
 	      //This square root is not super efficient
 	      //Should be implemented in r^2 manner
-	      value = (* RBF)(x_1);
+	      value = (* RBF)(abs(x_1));
 	      gsl_matrix_set(A,i,j,value);
 	      gsl_matrix_set(A,j,i,value);
 	    }
@@ -1181,7 +1199,9 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval, value,min,max;
@@ -1205,6 +1225,12 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
 
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
 	{
@@ -1217,7 +1243,7 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 	  //Setting main body of A matrix
 	  for(int j = i+1; j < knn; j++)
 	    {
-	      value = (*RBF)(local_coordinates[i] - local_coordinates[j]);
+	      value = (*RBF)(abs(local_coordinates[i] - local_coordinates[j]));
 	      gsl_matrix_set(A,i,j,value);
 	      gsl_matrix_set(A,j,i,value);
 	    }
@@ -1248,6 +1274,7 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -1265,10 +1292,10 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
     {
       tree_position_seed = i*knn;
       x_eval = interpolant_coordinates[i];
-      value = 0;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  value += (*RBF)(x_eval - coordinates[interpolant_tree[tree_position_seed+j]])*lambda[i*knn+j];
+	  value += (*RBF)(abs(coordinates[interpolant_tree[tree_position_seed+j]]-x_eval))*lambda[i*knn+j];
 	}
       (*output_function)[i] = value;
     }
@@ -1362,7 +1389,9 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval, value,min,max;
@@ -1386,6 +1415,12 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
 
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
 	{
@@ -1398,7 +1433,7 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 	  //Setting main body of A matrix
 	  for(int j = i+1; j < knn; j++)
 	    {
-	      value = (*RBF)(local_coordinates[i] - local_coordinates[j]);
+	      value = (*RBF)(abs(local_coordinates[i] - local_coordinates[j]));
 	      gsl_matrix_set(A,i,j,value);
 	      gsl_matrix_set(A,j,i,value);
 	    }
@@ -1429,6 +1464,7 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -1446,10 +1482,10 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
     {
       tree_position_seed = i*knn;
       x_eval = interpolant_coordinates[i];
-      value = 0;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  value += (*RBF)(x_eval - coordinates[interpolant_tree[tree_position_seed+j]])*lambda[i*knn+j];
+	  value += (*RBF)(abs(coordinates[interpolant_tree[tree_position_seed+j]]-x_eval))*lambda[i*knn+j];
 	}
       (*output_function)[i] = value;
     }
@@ -2029,6 +2065,12 @@ double mesh_free_2D::create_finite_differences_weights(string selection, unsigne
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
@@ -2219,6 +2261,12 @@ double mesh_free_2D::create_finite_differences_weights(string selection, unsigne
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
@@ -2706,6 +2754,12 @@ double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<do
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*nn;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
 
 
@@ -2929,7 +2983,9 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval,y_eval, value,min,max,x_1, y_1;
@@ -2953,6 +3009,12 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
+
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
@@ -3003,6 +3065,7 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -3021,12 +3084,12 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
       tree_position_seed = i*knn;
       x_eval = interpolant_coordinates[i*2];
       y_eval = interpolant_coordinates[i*2+1];
-      value = 0.;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*2];
+	  x_1 = coordinates[interpolant_tree[tree_position_seed+j]*2] - x_eval;
 	  x_1 *= x_1;
-	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*2+1];
+	  y_1 = coordinates[interpolant_tree[tree_position_seed+j]*2+1] - y_eval;
 	  y_1 *= y_1;
 	  x_1 += y_1;
 	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
@@ -3125,7 +3188,9 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval,y_eval, value,min,max,x_1, y_1;
@@ -3150,6 +3215,12 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
+
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
@@ -3200,6 +3271,7 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -3218,12 +3290,12 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
       tree_position_seed = i*knn;
       x_eval = interpolant_coordinates[i*2];
       y_eval = interpolant_coordinates[i*2+1];
-      value = 0.;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*2];
+	  x_1 = coordinates[interpolant_tree[tree_position_seed+j]*2] - x_eval;
 	  x_1 *= x_1;
-	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*2+1];
+	  y_1 = coordinates[interpolant_tree[tree_position_seed+j]*2+1] - y_eval;
 	  y_1 *= y_1;
 	  x_1 += y_1;
 	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
@@ -3532,6 +3604,12 @@ double mesh_free_3D::create_finite_differences_weights(string selection, uint pd
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < num_neighbours; i++)
@@ -4009,6 +4087,12 @@ double mesh_free_3D::create_finite_differences_weights(string selection, unsigne
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*num_neighbours;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = num_neighbours; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < num_neighbours; i++)
@@ -4524,6 +4608,12 @@ double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<do
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*nn;
 
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < nn; i++)
 	{
@@ -4793,7 +4883,9 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval,y_eval,z_eval, value,min,max,x_1, y_1, z_1;
@@ -4818,6 +4910,12 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
+
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
@@ -4871,6 +4969,7 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -4891,14 +4990,14 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
       y_eval = interpolant_coordinates[i*3+1];
       z_eval = interpolant_coordinates[i*3+2];
 
-      value = 0.;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*3];
+	  x_1 = coordinates[interpolant_tree[tree_position_seed+j]*3] - x_eval;
 	  x_1 *= x_1;
-	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+1];
+	  y_1 = coordinates[interpolant_tree[tree_position_seed+j]*3+1] - y_eval;
 	  y_1 *= y_1;
-	  z_1 = z_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+2];
+	  z_1 = coordinates[interpolant_tree[tree_position_seed+j]*3+2] - z_eval;
 	  z_1 *= z_1;
 	  x_1 += y_1 + z_1;
 	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];
@@ -4998,7 +5097,9 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
 
   //Setting the stage for the output coefficients
   vector<double> lambda;
+  vector<double> gamma;
   lambda.resize(interpolant_tree.size());
+  gamma.resize(num_nodes_interpolant);
 
   //Allocating all helper quantities in the process
   double x_eval,y_eval,z_eval, value,min,max,x_1, y_1, z_1;
@@ -5024,6 +5125,12 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
       gsl_vector_set_all(S,0.);
       gsl_vector_set_all(work_dummy,0.);
       tree_position_seed = global*knn;
+
+      //Resetting diagonal polynomial part
+      for(unsigned int i = knn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
 
       //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
       for(unsigned int i = 0; i < knn; i++)
@@ -5077,6 +5184,7 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
 	{
 	  lambda[tree_position_seed+i] = gsl_vector_get(x,i);
 	}
+      gamma[global] = gsl_vector_get(x,knn);
     }
 
   gsl_matrix_free(A);
@@ -5097,14 +5205,14 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
       y_eval = interpolant_coordinates[i*3+1];
       z_eval = interpolant_coordinates[i*3+2];
 
-      value = 0.;
+      value = gamma[i]; //Polynomial term, only constant in this setup
       for(int j = 0; j < knn; j++)
 	{
-	  x_1 = x_eval - coordinates[interpolant_tree[tree_position_seed+j]*3];
+	  x_1 = coordinates[interpolant_tree[tree_position_seed+j]*3] - x_eval;
 	  x_1 *= x_1;
-	  y_1 = y_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+1];
+	  y_1 = coordinates[interpolant_tree[tree_position_seed+j]*3+1] - y_eval;
 	  y_1 *= y_1;
-	  z_1 = z_eval - coordinates[interpolant_tree[tree_position_seed+j]*3+2];
+	  z_1 = coordinates[interpolant_tree[tree_position_seed+j]*3+2] - z_eval;
 	  z_1 *= z_1;
 	  x_1 += y_1 + z_1;
 	  value += (*RBF)(sqrt(x_1))*lambda[i*knn+j];

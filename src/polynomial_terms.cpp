@@ -431,3 +431,60 @@ vector<double> polynomial_support_rhs_column_vector_3D(string selection, unsigne
 
 }
 
+double polynomial_support_evaluate_1D(double x_in, vector<double> *gammas, unsigned int stride, unsigned int pdeg)
+{
+  vector<double> poly = row_vector_from_polynomial_1D(x_in,pdeg);
+
+  if((gammas->size() - stride) < poly.size())
+    {
+      throw invalid_argument("PTERMS: Weight vector too short.");
+    }
+  double out = 0.;
+  
+  for(unsigned int i = 0; i < poly.size(); i++)
+    {
+      out += (*gammas)[stride+i]*poly[i];
+    }
+
+  return out;
+}
+
+double polynomial_support_evaluate_2D(double x_in, double y_in, vector<double> *gammas, unsigned int stride, unsigned int pdeg)
+{
+  vector<double> poly = row_vector_from_polynomial_2D(x_in,y_in,pdeg);
+
+  if((gammas->size() - stride) < poly.size())
+    {
+      throw invalid_argument("PTERMS: Weight vector too short.");
+    }
+  double out = 0.;
+  
+  for(unsigned int i = 0; i < poly.size(); i++)
+    {
+      out += (*gammas)[stride+i]*poly[i];
+    }
+
+  return out;
+}
+
+double polynomial_support_evaluate_3D(double x_in, double y_in, double z_in, vector<double> *gammas, unsigned int stride, unsigned int pdeg)
+{
+  vector<double> poly = row_vector_from_polynomial_3D(x_in,y_in,z_in,pdeg);
+
+  if((gammas->size() - stride) < poly.size())
+    {
+      throw invalid_argument("PTERMS: Weight vector too short.");
+    }
+  double out = 0.;
+  
+  for(unsigned int i = 0; i < poly.size(); i++)
+    {
+      out += (*gammas)[stride+i]*poly[i];
+    }
+
+  return out;
+}
+
+
+
+

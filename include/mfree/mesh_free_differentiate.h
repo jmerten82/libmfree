@@ -281,6 +281,8 @@ class mesh_free_1D : public mesh_free_differentiate
   
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  using mesh_free::interpolate;
+
   /*
     This is the new interpolation function with polynomial support of arbitrary order, as described
     mesh_free_differentiate.
@@ -391,6 +393,8 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  using mesh_free::interpolate;
+
   /*
     This is the new interpolation function with polynomial support of arbitrary order, as described
     mesh_free_differentiate.
@@ -490,6 +494,8 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
+
+  using mesh_free::interpolate;
 
   /*
     This is the new interpolation function with polynomial support of arbitrary order, as described

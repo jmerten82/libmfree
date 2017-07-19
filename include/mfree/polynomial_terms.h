@@ -57,6 +57,30 @@ vector<double> polynomial_support_rhs_column_vector_2D(string derivative = "x", 
 
 vector<double> polynomial_support_rhs_column_vector_3D(string derivative = "x", unsigned pdeg = 0);
 
+/*
+  This is specifically needed for the calculation of an interpolant.
+  Given the libmfree scheme and ordering of polynomials of a given order
+  this function evaluates the polynomials at a given point and weighs them
+  with the factor and returns the sum of all contributions. This
+  routine is largely based on the 'row_vector_from_polynomial' routines.
+  The optional stride relates to an offset in the gamma vector, which eventually
+  desribes an ensemble of weights for many interpolant nodes. 
+*/
+
+double polynomial_support_evaluate_1D(double x_in, vector<double> *gammas, unsigned int stride = 0, unsigned int pdeg = 0);
+
+/*
+  Same as above but in 2D.
+*/
+
+double polynomial_support_evaluate_2D(double x_in, double y_in, vector<double> *gammas, unsigned int stride = 0, unsigned int pdeg = 0);
+
+/*
+  Same as above but in 3D.
+*/
+
+double polynomial_support_evaluate_3D(double x_in, double y_in, double z_in, vector<double> *gammas, unsigned int stride = 0, unsigned int pdeg = 0);
+
 
 
 #endif    /*POLYNOMIAL_TERMS_H*/

@@ -26,13 +26,14 @@ using namespace std;
 int main()
 {
 
-  string filename_out = "./data/accuracy_test_laplacian_std_gaussian.txt";
+  string filename_out = "./data/accuracy_test_laplacian_std_gaussian_TEST_old_scheme.txt";
 
   //Define RBF, polynomial degree, number of grid points and test function to be tested
 
 
   unsigned int pdeg = 6;
   gaussian_rbf rbf;
+  //phs_nineth_order rbf;
   int N = 1000;
   nfw_lensing_potential test_function;
   string derivative = "Laplace";
@@ -64,7 +65,7 @@ int main()
   //Creating the 2D mesh_free domain
 
   mesh_free_2D domain(&std_coords);
-  domain.build_tree();
+  domain.build_tree(32);
 
 
   //Creating output file that will carry results
@@ -80,14 +81,14 @@ int main()
   diff.resize(size_std);
   rel_diff.resize(size_std);
 
-  for(unsigned int i = 0; i < 200; i++)
+  for(unsigned int i = 0; i < 300; i++)
     {
       rbf.set_epsilon(shape);
-      for(unsigned int j = 0; j < 11; j++)
+      for(unsigned int j = 0; j < 1; j++)
 	{
 	  cout <<"shape: " <<shape <<"\t" <<"pdeg: " <<j <<endl;
-	  current_condition = domain.differentiate(&f_x,derivative,j,&rbf,&result);
-	  //current_condition = domain.differentiate(&f_x,derivative,&rbf,&result);
+	  //current_condition = domain.differentiate(&f_x,derivative,j,&rbf,&result);
+	  current_condition = domain.differentiate(&f_x,derivative,&rbf,&result);
 	  for(unsigned int l = 0; l < size_std; l++)
 	    {
 	      double current = Df_x[l];
@@ -103,7 +104,7 @@ int main()
 
 	  output <<shape <<"  " <<j <<"  " <<current_condition <<"  " <<gsl_stats_mean(&diff[0],1,diff.size()) <<"  " <<gsl_stats_mean(&rel_diff[0],1,rel_diff.size()) <<"  " <<*it <<"  " <<*rel_it <<"  " <<std_coords[rel_pos*2] <<"  " <<std_coords[rel_pos*2+1] <<endl;  
 	}
-      shape += .01;
+      shape += 0.01;
     }
 
 
