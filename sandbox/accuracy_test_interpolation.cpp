@@ -14,6 +14,7 @@
 #include <mfree/radial_basis_function.h>
 #include <mfree/rbf_implementation.h>
 #include <mfree/rbf_polyharmonic_splines.h>
+#include <mfree/rbf_wendland.h>
 #include <mfree/test_functions.h>
 #include <mfree/test_functions_implementation.h>
 #include <mfree/mesh_free.h>
@@ -28,13 +29,15 @@ int main()
 
   //Defining the basic environment of the test
 
-  string filename_out = "./data/accuracy_test_interpol_tweak.txt";
-  unsigned int N_in = 100;
+  string filename_out = "./data/accuracy_test_interpol_wend.txt";
+  unsigned int N_in = 600;
   unsigned int N_out = 1000;
   int seed_in = 42;
   int seed_out = 43;
   nfw_lensing_potential test_function;
-  gaussian_rbf rbf;
+  //gaussian_rbf rbf;
+  //phs_first_order rbf;
+  wendland_C2 rbf;
 
   //Creating the underlying random distributions of nodes
 
@@ -72,21 +75,21 @@ int main()
   output <<"#shape  pdeg  condition  mean_abs_err  mean_rel_err  max_abs_err  max_rel_err max_err_x max_err_y" <<endl;
 
   //Error book keeping
-  double shape = 0.01;
+  double shape = 0.001;
   vector<double> diff, rel_diff, result;
   double current_condition;
   diff.resize(N_out);
   rel_diff.resize(N_out);
 
   //Loop over shape parmaters and polynomial support degree
-  for(unsigned int i = 0; i < 200; i++)
+  for(unsigned int i = 0; i < 1000; i++)
     {
       rbf.set_epsilon(shape);
       for(unsigned int j = 0; j < 11; j++)
 	{
 	  cout <<"shape: " <<shape <<"\t" <<"pdeg: " <<j <<endl;
-	  current_condition = mfree.interpolate(&nodes_out,&f_in,&result,&rbf,j);
-	  //current_condition = mfree.interpolate(&nodes_out,&f_in,&result,&rbf);
+	  current_condition = mfree.interpolate(&nodes_out,&f_in,&result,&rbf,j,32);
+	  //current_condition = mfree.interpolate(&nodes_out,&f_in,&result,&rbf,32);
 	  for(unsigned int l = 0; l < N_out; l++)
 	    {
 	      double current = f_out[l];
@@ -102,7 +105,7 @@ int main()
 
 	  output <<shape <<"  " <<j <<"  " <<current_condition <<"  " <<gsl_stats_mean(&diff[0],1,diff.size()) <<"  " <<gsl_stats_mean(&rel_diff[0],1,rel_diff.size()) <<"  " <<*it <<"  " <<*rel_it <<"  " <<nodes_out[rel_pos*2] <<"  " <<nodes_out[rel_pos*2+1] <<endl;  
 	}
-      shape += .01;
+      shape += .001;
     }
 
 

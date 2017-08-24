@@ -80,6 +80,13 @@ class radial_basis_function
 
   ~radial_basis_function();
 
+  /*
+    The following is for compatibility reasons. 
+  */
+
+  virtual void set_epsilon(double in){};
+  virtual double show_epsilon();
+
 
   /*
     Here you can set the coordinate origin of the radial basis 
@@ -99,6 +106,8 @@ class radial_basis_function
   */
 
   coordinate show_coordinate_offset();
+
+  
 
   /*
     The standard bracket operator evaluates the radial basis function

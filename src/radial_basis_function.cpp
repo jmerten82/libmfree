@@ -18,6 +18,12 @@ radial_basis_function::~radial_basis_function()
 {
 }
 
+double radial_basis_function::show_epsilon()
+{
+  return 0.;
+}
+
+
 void radial_basis_function::set_coordinate_offset(double x_in, double y_in, double z_in)
 {
   x_0 = x_in;
