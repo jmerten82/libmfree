@@ -121,13 +121,23 @@ class mesh_free_differentiate : public mesh_free
   vector<double> create_finite_differences_weights_col(string selection, radial_basis_function *RBF, int max_length);
 
   /*
+    This is the version of the routine above that also uses polynomial support of arbitrary order.
+  */
+
+  vector<double> create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, int max_length);
+
+  /*
     Again the same function as above but for a shaped RBF with varying 
     shape parameter.
   */
 
   vector<double> create_finite_differences_weights_col(string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length);
 
+  /*
+    Again, the version of the function above with polynomial support of arbitrary order.
+  */
 
+  vector<double> create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length);
 
   /*
     Performs a derivative operation on a vector and returns the derivative. 
@@ -281,6 +291,12 @@ class mesh_free_1D : public mesh_free_differentiate
   
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  /*
+    And the last version of this routine, which also allows for an adaptive shape parameter. 
+  */
+  
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn = 16);
+
   using mesh_free::interpolate;
 
   /*
@@ -393,6 +409,13 @@ class mesh_free_2D : public mesh_free_differentiate
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
 
+  /*
+    And the last version of this routine, which also allows for an adaptive shape parameter. 
+  */
+  
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn = 16);
+
+
   using mesh_free::interpolate;
 
   /*
@@ -494,6 +517,12 @@ class mesh_free_3D : public mesh_free_differentiate
   */
 
   double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *out, int nn = 16);
+
+  /*
+    And the last version of this routine, which also allows for an adaptive shape parameter. 
+  */
+  
+  double differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn = 16);
 
   using mesh_free::interpolate;
 

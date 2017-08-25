@@ -131,10 +131,24 @@ vector<double> mesh_free_differentiate::create_finite_differences_weights_col(st
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, int max_length)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection,pdeg, &aux, RBF);
+  return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
+}
+
 vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length)
 {
   vector<double> aux;
   create_finite_differences_weights(selection, &aux, RBF,adaptive_shape_parameter);
+  return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
+}
+
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection, pdeg, &aux, RBF,adaptive_shape_parameter);
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
@@ -1116,6 +1130,199 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
   return output;
 
 }
+
+double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn)
+{
+  double shape_save = RBF->show_epsilon()
+
+  if(target_coordinates->size() < dim)
+    {
+      throw invalid_argument("MFREE_DIFF: Target coordinate vector invalid.");
+    }
+
+  if(in->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Input vector invalid.");
+    }
+
+  if(adaptive_shapes->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Adaptive shape vector too short.");
+    }
+
+  int num_out_nodes = target_coordinates->size() / dim;
+  vector<int> output_tree;
+  vector<double> output_distances;
+  output_tree.resize(nn*num_out_nodes);
+  output_distances.resize(nn*num_out_nodes);
+
+  //Creating a tree for the target vector.
+
+  flann::Matrix<double> flann_base(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_search(&(*target_coordinates)[0],num_out_nodes,dim);
+  flann::Matrix<int> flann_tree(&output_tree[0],num_out_nodes,nn);
+  flann::Matrix<double> flann_distances(&distances[0],num_out_nodes,nn);
+
+  //Creating flann index
+  flann::Index<flann::L2<double> > index(flann_base, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+ //Performing flann nearest neighbours search
+  index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
+
+  unsigned int polynomial = pdeg+1;
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(nn);
+
+  //Setting the stage for the output weights
+  vector<double> output_weights;
+  output_weights.resize(output_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval, x_1, value, x_node, min, max;
+  int tree_position_seed, index1, index2;
+
+
+  //Looping through all grid nodes
+  for(int global = 0; global < num_out_nodes; global++)
+    {
+      RBF->set_epsilon((*adaptive_shapes)[global]);
+      //Getting evaluation coordinate
+      x_eval = (*target_coordinates)[global];
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*nn;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+
+
+      for(unsigned int i = 0; i < nn; i++)
+	{
+	  local_coordinates[i] = coordinates[kD_tree[tree_position_seed+i]] - x_eval;
+	}
+
+      //Building up the linear system of equations
+
+      //Building the non-changing part of the result vector
+      vector<double> missing_columns = polynomial_support_rhs_column_vector_1D(selection, pdeg);
+      for(unsigned int l = 0; l < missing_columns.size(); l++)
+	{
+	  gsl_vector_set(b,l+nn,missing_columns[l]);
+	}
+
+      for(int i = 0; i < nn; i++)
+	{
+	  RBF->set_coordinate_offset(local_coordinates[i]);
+
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < nn; j++)
+	    {
+	      //calculating the distance
+	      index1 = output_tree[tree_position_seed+i];
+	      index2 = output_tree[tree_position_seed+j];
+	      x_1 = local_coordinates[index1];
+	      x_1 -= local_coordinates[index2];
+	      //Evaluating radial basis function
+	      //This square root is not super efficient
+	      //Should be implemented in r^2 manner
+	      value = (* RBF)(abs(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_1D(local_coordinates[i], pdeg);
+	  for(unsigned int l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+nn,missing_rows[l]);
+	      gsl_matrix_set(A,l+nn,i,missing_rows[l]);
+	    }
+	   
+      //Creating the data vector	  
+	  if(selection == "x")
+	    {
+	      gsl_vector_set(b,i,RBF->Dx(0.));
+	    }	  
+	  else if(selection == "xx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxx(0.));
+	    }	
+	  else if(selection == "xxx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxx(0.));
+	    }
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < nn; i++)
+	{
+	  output_weights[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+  //Cleanig up gsl work force
+  gsl_matrix_free(A);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+
+  double output = gsl_stats_mean(&condition[0], 1, num_out_nodes);
+
+  out->resize(num_out_nodes);
+  int seed, pos;
+
+  //Performing the finite differencing
+
+  for(int i = 0; i < num_out_nodes; i++)
+    {
+      value = 0.;
+      seed = i*nn;
+      for(int j = 0; j < nn; j++)
+	{
+	  pos = output_tree[seed+j];
+	  value += (*in)[pos]*output_weights[seed+j];
+	}
+      (*out)[i] = value;
+    }
+
+  RBF->set_epsilon(shape_save);
+  return output;
+
+}
+
 
 double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
 {
@@ -2899,6 +3106,231 @@ double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<do
 
  return output;
 
+}
+
+double mesh_free_2D::differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn)
+{
+  double shape_save = RBF->show_epsilon();
+
+  if(target_coordinates->size() < dim)
+    {
+      throw invalid_argument("MFREE_DIFF: Target coordinate vector invalid.");
+    }
+
+  if(in->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Input vector invalid.");
+    }
+
+  if(adaptive_shapes->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Adaptive shape vector too short.");
+    }
+
+  int num_out_nodes = target_coordinates->size() / dim;
+  vector<int> output_tree;
+  vector<double> output_distances;
+  output_tree.resize(nn*num_out_nodes);
+  output_distances.resize(nn*num_out_nodes);
+
+  //Creating a tree for the target vector.
+
+  flann::Matrix<double> flann_base(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_search(&(*target_coordinates)[0],num_out_nodes,dim);
+  flann::Matrix<int> flann_tree(&output_tree[0],num_out_nodes,nn);
+  flann::Matrix<double> flann_distances(&distances[0],num_out_nodes,nn);
+
+  //Creating flann index
+  flann::Index<flann::L2<double> > index(flann_base, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+ //Performing flann nearest neighbours search
+  index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
+
+  int polynomial = (pdeg+1)*(pdeg+2)/2;
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(nn*2);
+
+  //Setting the stage for the output weights
+  vector<double> output_weights;
+  output_weights.resize(output_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval, y_eval, x_1, y_1, value, x_node, y_node, min, max;
+  int tree_position_seed, index1, index2;
+
+
+  //Looping through all grid nodes
+  for(int global = 0; global < num_out_nodes; global++)
+    {
+      RBF->set_epsilon((*adaptive_shapes)[global]);
+      //Getting evaluation coordinate
+      x_eval = (*target_coordinates)[global*2];
+      y_eval = (*target_coordinates)[global*2+1];
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*nn;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+
+
+      for(unsigned int i = 0; i < nn; i++)
+	{
+	  local_coordinates[i*2] = coordinates[kD_tree[tree_position_seed+i]*2] - x_eval;
+	  local_coordinates[i*2+1] = coordinates[kD_tree[tree_position_seed+i]*2+1] - y_eval;
+	}
+
+      //Building up the linear system of equations
+
+      for(unsigned int i = 0; i < nn; i++)
+	{
+
+	  RBF->set_coordinate_offset(local_coordinates[i*2], local_coordinates[i*2+1]);
+
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < nn; j++)
+	    {
+	      //calculating the distance
+	      index1 = output_tree[tree_position_seed+i];
+	      index2 = output_tree[tree_position_seed+j];
+	      x_1 = local_coordinates[index1*2];
+	      x_1 -= local_coordinates[index2*2];
+	      x_1 *= x_1;   
+	      y_1 = local_coordinates[index1*2+1];
+	      y_1 -= local_coordinates[index2*2+1];
+	      y_1 *= y_1;
+	      x_1 += y_1;
+	      //Evaluating radial basis function
+	      //This square root is not super efficient
+	      //Should be implemented in r^2 manner
+	      value = (* RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_2D(local_coordinates[i*2],local_coordinates[i*2+1], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+nn,missing_rows[l]);
+	      gsl_matrix_set(A,l+nn,i,missing_rows[l]);
+	    }
+
+      //Creating the data vector	  
+	  if(selection == "x")
+	    {
+	      gsl_vector_set(b,i,RBF->Dx(0.,0.));
+	    }	  
+	  else if(selection == "y")
+	    {
+	      gsl_vector_set(b,i,RBF->Dy(0.,0.));
+	    }
+	  else if(selection == "xx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxx(0.,0.));
+	    }	
+	  else if(selection == "yy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyy(0.,0.));
+	    }
+	  else if(selection == "xy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxy(0.,0.));
+	    }
+	  else if(selection == "xxx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxx(0.,0.));
+	    }
+	  else if(selection == "yyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyyy(0.,0.));
+	    }
+	  else if(selection == "xxy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxy(0.,0.));
+	    }
+	  else if(selection == "xyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxyy(0.,0.));
+	    }
+	  else if(selection == "Laplace")
+	    {
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(0.,0.)+RBF->Dyy(0.,0.)));
+	    }
+	  else if(selection == "Neg_Laplace")
+	    {
+	      gsl_vector_set(b,i,0.5*(RBF->Dxx(0.,0.)-RBF->Dyy(0.,0.)));
+	    }
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < nn; i++)
+	{
+	  output_weights[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+  //Cleanig up gsl work force
+  gsl_matrix_free(A);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+
+
+  double output = gsl_stats_mean(&condition[0], 1, num_out_nodes);
+
+  out->resize(num_out_nodes);
+  int seed, pos;
+
+  //Performing the finite differencing
+
+  for(int i = 0; i < num_out_nodes; i++)
+    {
+      value = 0.;
+      seed = i*nn;
+      for(int j = 0; j < nn; j++)
+	{
+	  pos = output_tree[seed+j];
+	  value += (*in)[pos]*output_weights[seed+j];
+	}
+      (*out)[i] = value;
+    }
+
+  RBF->set_epsilon(shape_save);
+ return output;
 }
 
 double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, int knn, int stride)
@@ -4799,6 +5231,282 @@ double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<do
       (*out)[i] = value;
     }
     
+  return output;
+}
+
+double mesh_free_3D::differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn)
+{
+
+  double shape_save = RBF->show_epsilon();
+
+  if(target_coordinates->size() < dim)
+    {
+      throw invalid_argument("MFREE_DIFF: Target coordinate vector invalid.");
+    }
+
+  if(in->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Input vector invalid.");
+    }
+
+  if(adaptive_shapes->size() < num_nodes)
+    {
+      throw invalid_argument("MFREE_DIFF: Adaptive shape vector too short.");
+    }
+
+  int num_out_nodes = target_coordinates->size() / dim;
+  vector<int> output_tree;
+  vector<double> output_distances;
+  output_tree.resize(nn*num_out_nodes);
+  output_distances.resize(nn*num_out_nodes);
+
+  //Creating a tree for the target vector.
+
+  flann::Matrix<double> flann_base(&coordinates[0],num_nodes,dim);
+  flann::Matrix<double> flann_search(&(*target_coordinates)[0],num_out_nodes,dim);
+  flann::Matrix<int> flann_tree(&output_tree[0],num_out_nodes,nn);
+  flann::Matrix<double> flann_distances(&distances[0],num_out_nodes,nn);
+
+  //Creating flann index
+  flann::Index<flann::L2<double> > index(flann_base, flann::KDTreeIndexParams(4));
+  index.buildIndex();
+ //Performing flann nearest neighbours search
+  index.knnSearch(flann_search, flann_tree, flann_distances, nn, flann::SearchParams(128));
+
+  int polynomial = (pdeg+1)*(pdeg+2)*(pdeg+3)/6;
+
+
+  //Allocating work space for linear system to get finite differencing 
+  //weights
+  gsl_matrix *A = gsl_matrix_calloc(nn+polynomial,nn+polynomial);
+  gsl_matrix *V = gsl_matrix_calloc(A->size1,A->size2);
+  gsl_vector *S = gsl_vector_calloc(A->size1);
+  gsl_vector *work_dummy = gsl_vector_calloc(A->size1);
+  gsl_vector *b = gsl_vector_calloc(A->size1);
+  gsl_vector *x = gsl_vector_calloc(A->size1);
+  vector<double> condition;
+
+  //Allocating space for local coordinates in stencil
+  vector<double> local_coordinates;
+  local_coordinates.resize(nn*3);
+
+  //Setting the stage for the output weights
+  vector<double> output_weights;
+  output_weights.resize(output_tree.size());
+
+  //Allocating all helper quantities in the process
+  double x_eval, y_eval, z_eval, x_1, y_1, z_1,  value, x_node, y_node, z_node,  min, max;
+  int tree_position_seed, index1, index2;
+
+
+  //Looping through all grid nodes
+  for(int global = 0; global < num_out_nodes; global++)
+    {
+      RBF->set_epsilon((*adaptive_shapes)[global]);
+      //Getting evaluation coordinate
+      x_eval = (*target_coordinates)[global*3];
+      y_eval = (*target_coordinates)[global*3+1];
+      z_eval = (*target_coordinates)[global*3+2];
+      //Resetting linear system
+      gsl_matrix_set_identity(A);
+      gsl_vector_set_all(b,0.);
+      gsl_vector_set_all(x,0.);
+      gsl_matrix_set_all(V,0.);
+      gsl_vector_set_all(S,0.);
+      gsl_vector_set_all(work_dummy,0.);
+      tree_position_seed = global*nn;
+
+      //Resetting diagonal part of matrix
+      for(unsigned int i = nn; i < A->size1; i++)
+	{
+	  gsl_matrix_set(A,i,i,0.);
+	}
+
+      //Build initial all neighbour loop here which reads coordinates, shifts them to eval coordinates.
+      for(unsigned int i = 0; i < nn; i++)
+	{
+	  local_coordinates[i*3] = coordinates[kD_tree[tree_position_seed+i]*3] - x_eval;
+	  local_coordinates[i*3+1] = coordinates[kD_tree[tree_position_seed+i]*3+1] - y_eval;
+	  local_coordinates[i*3+2] = coordinates[kD_tree[tree_position_seed+i]*3+2] - z_eval;
+	}
+
+      //Building up the linear system of equations
+
+      //Building the non-changing part of the result vector
+      vector<double> missing_columns = polynomial_support_rhs_column_vector_3D(selection, pdeg);
+      for(unsigned int l = 0; l < missing_columns.size(); l++)
+	{
+	  gsl_vector_set(b,l+nn,missing_columns[l]);
+	}
+
+      for(int i = 0; i < nn; i++)
+	{
+	  RBF->set_coordinate_offset(local_coordinates[i*3], local_coordinates[i*3+1], local_coordinates[i*3+2]);
+
+	  //Setting main body of A matrix
+	  for(int j = i+1; j < nn; j++)
+	    {
+	      //calculating the distance
+	      index1 = output_tree[tree_position_seed+i];
+	      index2 = output_tree[tree_position_seed+j];
+	      x_1 = local_coordinates[index1*3];
+	      x_1 -= local_coordinates[index2*3];
+	      x_1 *= x_1;   
+	      y_1 = local_coordinates[index1*3+1];
+	      y_1 -= local_coordinates[index2*3+1];
+	      y_1 *= y_1;
+	      z_1 = local_coordinates[index1*3+2];
+	      z_1 -= local_coordinates[index2*3+2];
+	      z_1 *= z_1;
+	      x_1 += (y_1+z_1);
+	      //Evaluating radial basis function
+	      //This square root is not super efficient
+	      //Should be implemented in r^2 manner
+	      value = (* RBF)(sqrt(x_1));
+	      gsl_matrix_set(A,i,j,value);
+	      gsl_matrix_set(A,j,i,value);
+	    }
+
+	  //Creating the missing entries in the coefficient matrix
+	  //and the main part of the result vector
+	  vector<double> missing_rows = row_vector_from_polynomial_3D(local_coordinates[i*3],local_coordinates[i*3+1],local_coordinates[i*3+2], pdeg);
+	  for(uint l = 0; l < missing_rows.size(); l++)
+	    {
+	      gsl_matrix_set(A,i,l+nn,missing_rows[l]);
+	      gsl_matrix_set(A,l+nn,i,missing_rows[l]);
+	    }
+
+     //Creating the data vector	  
+	  if(selection == "x")
+	    {
+	      gsl_vector_set(b,i,RBF->Dx(0.,0.,0.));
+	    }	  
+	  else if(selection == "y")
+	    {
+	      gsl_vector_set(b,i,RBF->Dy(0.,0.,0.));
+	    }
+	  else if(selection == "z")
+	    {
+	      gsl_vector_set(b,i,RBF->Dz(0.,0.,0.));
+	    }
+	  else if(selection == "xx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxx(0.,0.,0.));
+	    }	
+	  else if(selection == "xy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxy(0.,0.,0.));
+	    }
+	  else if(selection == "xz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxz(0.,0.,0.));
+	    }
+	  else if(selection == "yy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyy(0.,0.,0.));
+	    }
+	  else if(selection == "yz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyz(0.,0.,0.));
+	    }
+	  else if(selection == "zz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dzz(0.,0.,0.));
+	    }
+	  else if(selection == "xxx")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxx(0.,0.,0.));
+	    }
+	  else if(selection == "xxy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxy(0.,0.,0.));
+	    }
+	  else if(selection == "xxz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxxz(0.,0.,0.));
+	    }
+	  else if(selection == "xyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxyy(0.,0.,0.));
+	    }
+	  else if(selection == "xyz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxyz(0.,0.,0.));
+	    }
+	  else if(selection == "xzz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dxzz(0.,0.,0.));
+	    }
+	  else if(selection == "yyy")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyyy(0.,0.,0.));
+	    }
+	  else if(selection == "yyz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyyz(0.,0.,0.));
+	    }
+	  else if(selection == "yzz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dyzz(0.,0.,0.));
+	    }
+	  else if(selection == "zzz")
+	    {
+	      gsl_vector_set(b,i,RBF->Dzzz(0.,0.,0.));
+	    }
+
+	  else if(selection == "Laplace")
+	    {
+	      gsl_vector_set(b,i,1./2.*(RBF->Dxx(0.,0.,0.)+RBF->Dyy(0.,0.,0.)));
+	    }
+	  else if(selection == "Neg_Laplace")
+	    {
+	      gsl_vector_set(b,i,1./2.*(RBF->Dxx(0.,0.,0.)-RBF->Dyy(0.,0.,0.)));
+	    }
+	}
+
+      //Checking for the condition of the linear system via singular value
+      //decomposition.
+      gsl_linalg_SV_decomp(A, V, S, work_dummy);
+      gsl_vector_minmax(S,&min,&max);
+      condition.push_back(max/min);
+
+      //Solving linear system using the SVD. 
+      gsl_linalg_SV_solve(A, V, S, b, x);
+
+      //Writing the output weights 
+      for(int i = 0; i < nn; i++)
+	{
+	  output_weights[tree_position_seed+i] = gsl_vector_get(x,i);
+	}
+    }
+  //Cleanig up gsl work force
+  gsl_matrix_free(A);
+  gsl_vector_free(b);
+  gsl_vector_free(x);
+  gsl_matrix_free(V);
+  gsl_vector_free(S);
+  gsl_vector_free(work_dummy);
+
+
+  double output = gsl_stats_mean(&condition[0], 1, num_out_nodes);
+
+  out->resize(num_out_nodes);
+  int seed, pos;
+
+  //Performing the finite differencing
+
+  for(int i = 0; i < num_out_nodes; i++)
+    {
+      value = 0.;
+      seed = i*nn;
+      for(int j = 0; j < nn; j++)
+	{
+	  pos = output_tree[seed+j];
+	  value += (*in)[pos]*output_weights[seed+j];
+	}
+      (*out)[i] = value;
+    }
+  RBF->set_epsilon(shape_save);
   return output;
 }
 
