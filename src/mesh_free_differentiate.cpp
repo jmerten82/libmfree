@@ -49,7 +49,7 @@ double mesh_free_differentiate::differentiate(vector<double> *in, string selecti
 }
 
 
-double mesh_free_differentiate::differentiate(vector<double> *in, string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, vector<double> *out)
+double mesh_free_differentiate::differentiate(vector<double> *in, string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, vector<double> *out)
 {
 
   //Checking the size of the input vectors
@@ -138,14 +138,14 @@ vector<double> mesh_free_differentiate::create_finite_differences_weights_col(st
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
-vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length)
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length)
 {
   vector<double> aux;
   create_finite_differences_weights(selection, &aux, RBF,adaptive_shape_parameter);
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
-vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter, int max_length)
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length)
 {
   vector<double> aux;
   create_finite_differences_weights(selection, pdeg, &aux, RBF,adaptive_shape_parameter);
@@ -453,7 +453,7 @@ double mesh_free_1D::create_finite_differences_weights(string selection, unsigne
   return gsl_stats_mean(&condition[0], 1, num_nodes);
 }
 
-double mesh_free_1D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_1D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
   //Checking if the tree is up to date
   if(kD_update)
@@ -606,7 +606,7 @@ double mesh_free_1D::create_finite_differences_weights(string selection, vector<
   return gsl_stats_mean(&condition[0], 1, num_nodes);
 }
 
-double mesh_free_1D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_1D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
   //Checking if the tree is up to date
   if(kD_update)
@@ -1510,7 +1510,7 @@ double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *in
   return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
-double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+double mesh_free_1D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
   double shape_save = RBF->show_epsilon();
@@ -1959,7 +1959,7 @@ double mesh_free_2D::create_finite_differences_weights(string selection, vector<
   return gsl_stats_mean(&condition[0], 1, num_nodes);
 }
 
-double mesh_free_2D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_2D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
   double shape_save = RBF->show_epsilon();
 
@@ -2406,7 +2406,7 @@ double mesh_free_2D::create_finite_differences_weights(string selection, unsigne
 
 }
 
-double mesh_free_2D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_2D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
   double shape_save = RBF->show_epsilon();
 
@@ -3532,7 +3532,7 @@ double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *in
   return gsl_stats_mean(&condition[0], 1, num_nodes_interpolant);
 }
 
-double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+double mesh_free_2D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
   double shape_save = RBF->show_epsilon();
@@ -4213,7 +4213,7 @@ double mesh_free_3D::create_finite_differences_weights(string selection, uint pd
 }
 
 
-double mesh_free_3D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_3D::create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
 
   double shape_save = RBF->show_epsilon();
@@ -4455,7 +4455,7 @@ double mesh_free_3D::create_finite_differences_weights(string selection, vector<
 
 }
 
-double mesh_free_3D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter)
+double mesh_free_3D::create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
 {
 
   double shape_save = RBF->show_epsilon();
@@ -5717,7 +5717,7 @@ double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *in
 
 }
 
-double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
+double mesh_free_3D::interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn, int stride)
 {
 
   double shape_save = RBF->show_epsilon();

@@ -115,7 +115,7 @@ class radial_basis_function
     here. It is implemented as a pure virtual function.
   */
 
-  virtual double operator() (double radius) = 0;
+  virtual double operator() (double radius);
 
   /*
     This bracket operator evaluates the radial basis function
@@ -138,7 +138,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in);
   */
 
-  virtual double Dx(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dx(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a 2D coordinate structure.
@@ -177,7 +177,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dxx(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
@@ -216,7 +216,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dxy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
@@ -255,7 +255,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dxxx(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
@@ -294,7 +294,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in, z_in, z_in);
   */
 
-  virtual double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dxxy(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.
@@ -371,7 +371,7 @@ class radial_basis_function
     radial basis function at a certain coordinate (x_in, y_in, z_in);
   */
 
-  virtual double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.) = 0;
+  virtual double Dxyz(double x_in = 0., double y_in = 0., double z_in = 0.);
 
   /*
     The same function as above but using a coordinate structure.

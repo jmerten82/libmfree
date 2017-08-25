@@ -49,6 +49,11 @@ coordinate radial_basis_function::show_coordinate_offset()
   return x_out;
 }
 
+double radial_basis_function::operator() (double radius)
+{
+  return radius;
+}
+
 double radial_basis_function::operator() (double x_in, double y_in, double z_in)
 {
 
@@ -63,6 +68,10 @@ double radial_basis_function::operator() (coordinate x_in)
 {
   return (*this)(x_in.x,x_in.y,x_in.z);
 }
+double radial_basis_function::Dx(double x_in, double y_in, double z_in)
+{
+  return 0.;
+}
 
 double radial_basis_function::Dx(coordinate x_in)
 {
@@ -76,6 +85,10 @@ double radial_basis_function::Dz(coordinate x_in)
 {
   return this->Dz(x_in.x,x_in.y,x_in.z);
 }
+double radial_basis_function::Dxx(double x_in, double y_in, double z_in)
+{
+  return 0.;
+}
 double radial_basis_function::Dxx(coordinate x_in)
 {
   return this->Dxx(x_in.x,x_in.y,x_in.z);
@@ -87,6 +100,10 @@ double radial_basis_function::Dyy(coordinate x_in)
 double radial_basis_function::Dzz(coordinate x_in)
 {
   return this->Dzz(x_in.x,x_in.y,x_in.z);
+}
+double radial_basis_function::Dxy(double x_in, double y_in, double z_in)
+{
+  return 0.;
 }
 double radial_basis_function::Dxy(coordinate x_in)
 {
@@ -100,6 +117,10 @@ double radial_basis_function::Dyz(coordinate x_in)
 {
   return this->Dyz(x_in.x,x_in.y,x_in.z);
 }
+double radial_basis_function::Dxxx(double x_in, double y_in, double z_in)
+{
+  return 0.;
+}
 double radial_basis_function::Dxxx(coordinate x_in)
 {
   return this->Dxxx(x_in.x,x_in.y,x_in.z);
@@ -111,6 +132,10 @@ double radial_basis_function::Dyyy(coordinate x_in)
 double radial_basis_function::Dzzz(coordinate x_in)
 {
   return this->Dzzz(x_in.x,x_in.y,x_in.z);
+}
+double radial_basis_function::Dxxy(double x_in, double y_in, double z_in)
+{
+  return 0.;
 }
 double radial_basis_function::Dxxy(coordinate x_in)
 {
@@ -135,6 +160,10 @@ double radial_basis_function::Dxzz(coordinate x_in)
 double radial_basis_function::Dyzz(coordinate x_in)
 {
   return this->Dyzz(x_in.x,x_in.y,x_in.z);
+}
+double radial_basis_function::Dxyz(double x_in, double y_in, double z_in)
+{
+  return 0.;
 }
 double radial_basis_function::Dxyz(coordinate x_in)
 {
