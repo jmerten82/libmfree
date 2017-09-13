@@ -317,7 +317,7 @@ vector<double> build_unit_grid(double pixel_size, bool spare_centre)
   return out;
 }
 
-vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, vector<string> differentials = vector<string>(), int refinements, int steps, double eps, string verbose_mode)
+vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function *rbf_in, unsigned int pdeg,  test_function *test_function_in, vector<string> differentials = vector<string>(), int refinements, int steps, double eps, string verbose_mode)
 {
   bool verbose = 0;
 
@@ -391,7 +391,7 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
 	      double condition;
 	      rbf_in->set_epsilon(current_eps);
 	      vector<double> current_diff_out;
-	      condition = mesh_free_in->differentiate(&base_function,differentials[diffs],rbf_in, &current_diff_out);
+	      condition = mesh_free_in->differentiate(&base_function,differentials[diffs],pdeg,rbf_in, &current_diff_out);
 	      for(int i = 0; i < dim; i++)
 		{
 		  double current_real = test_function_in->D(base_coords[i],differentials[diffs]);
@@ -446,7 +446,7 @@ vector<double> optimise_grid_differentiation(mesh_free_differentiate *mesh_free_
   return output;
 }
 
-vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function_shape *rbf_in,  test_function *test_function_in, string differential, int knn, int refinements, int steps, double eps, string verbose_mode)
+vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *mesh_free_in,radial_basis_function *rbf_in, unsigned int pdeg,  test_function *test_function_in, string differential, int knn, int refinements, int steps, double eps, string verbose_mode)
 {
 
   bool verbose = false;
@@ -522,7 +522,7 @@ vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *m
 	      vector<double> current_interpol_out;
 	      rbf_in->set_epsilon(current_eps);
 	      
-	      condition = mesh_free_in->differentiate(&support_coordinates[global],&support_function,differential,rbf_in, &current_interpol_out, knn);
+	      condition = mesh_free_in->differentiate(&support_coordinates[global],&support_function,differential,pdeg,rbf_in, &current_interpol_out, knn);
 	      error = abs((current_interpol_out[0]-current_target_value)/current_target_value);
 	      conditions.push_back(condition);
 	      errors.push_back(error);
@@ -575,7 +575,7 @@ vector<double> optimise_adaptive_grid_differentiation(mesh_free_differentiate *m
 
 }
 
-double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn, string test_function_switch, int refinements, int steps, double eps, string verbose_mode)
+double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function *rbf_in, unsigned int pdeg, test_function *test_function_in, int knn, string test_function_switch, int refinements, int steps, double eps, string verbose_mode)
 {
 
   bool verbose = 0;
@@ -665,7 +665,7 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
 	  double condition;
 	  rbf_in->set_epsilon(eps);
 	  vector<double> current_interpol_out;
-	  condition = mesh_free_in->interpolate(&target_coords,&input_function, &current_interpol_out, rbf_in, knn);
+	  condition = mesh_free_in->interpolate(&target_coords,&input_function, &current_interpol_out, rbf_in,pdeg, knn);
 	  for(int i = 0; i < dim_target; i++)
 	    {
 	      difference_vector.push_back(abs((current_interpol_out[i]-target_function[i])/target_function[i]));
@@ -718,7 +718,7 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
   
 }
 
-vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function_shape *rbf_in,  test_function *test_function_in, int knn, string test_function_switch , int refinements, int steps, double eps, string verbose_mode)
+vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function *rbf_in, unsigned int pdeg, test_function *test_function_in, int knn, string test_function_switch , int refinements, int steps, double eps, string verbose_mode)
 {
 
   bool verbose = false;
@@ -817,7 +817,7 @@ vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mes
 	      vector<double> current_interpol_out;
 	      rbf_in->set_epsilon(current_eps);
 	      
-	      condition = mesh_free_in->interpolate(&current_target_coordinates,&support_function, &current_interpol_out, rbf_in, knn);		
+	      condition = mesh_free_in->interpolate(&current_target_coordinates,&support_function, &current_interpol_out, rbf_in,pdeg, knn);		
 	      error = abs((current_interpol_out[0]-current_target_value)/current_target_value);
 	      conditions.push_back(condition);
 	      errors.push_back(error);

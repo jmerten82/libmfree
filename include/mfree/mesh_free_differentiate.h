@@ -191,6 +191,13 @@ class mesh_free_differentiate : public mesh_free
   double differentiate(vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF,  vector<double> *out);
 
   /*
+    This is the same as above but uses an adaptive shape parameter.
+  */
+
+  double differentiate(vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter,  vector<double> *out);
+
+
+  /*
     This new routine introduces interpolation with polynomial support. This is less general than 
     the routines which are in the mesh_free class since the appearance of the polynomial support
     strongly depends onthe dimensionality of the mesh-free domain. This is also why the method is 

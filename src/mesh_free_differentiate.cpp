@@ -123,6 +123,41 @@ double mesh_free_differentiate::differentiate(vector<double> *in, string selecti
   return condition;
 }
 
+double mesh_free_differentiate::differentiate(vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter,  vector<double> *out)
+{
+
+  //Checking the size of the input vector
+
+  if(in->size() != num_nodes)
+    {
+      throw invalid_argument("UNSTRUC_GRID: Input vector for diff is invalid.");
+    }
+
+  //Creating the finite differences
+
+  vector<double> weights;
+  double condition = create_finite_differences_weights(selection,pdeg, &weights, RBF, adaptive_shape_parameter);
+  out->resize(num_nodes);
+  int num_neighbours = kD_tree.size() / num_nodes;
+  double value;
+  int seed, pos;
+
+  //Performing the finite differencing
+
+  for(int i = 0; i < num_nodes; i++)
+    {
+      value = 0.;
+      seed = i*num_neighbours;
+      for(int j = 0; j < num_neighbours; j++)
+	{
+	  pos = kD_tree[seed+j];
+	  value += (*in)[pos]*weights[seed+j];
+	}
+      (*out)[i] = value;
+    }
+  return condition;
+}
+
 
 vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, radial_basis_function *RBF, int max_length)
 {
