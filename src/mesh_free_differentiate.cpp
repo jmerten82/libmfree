@@ -1133,7 +1133,7 @@ double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<do
 
 double mesh_free_1D::differentiate(vector<double> *target_coordinates, vector<double> *in, string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shapes,  vector<double> *out, int nn)
 {
-  double shape_save = RBF->show_epsilon()
+  double shape_save = RBF->show_epsilon();
 
   if(target_coordinates->size() < dim)
     {

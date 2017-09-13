@@ -373,7 +373,7 @@ class mesh_free_2D : public mesh_free_differentiate
     and a spatially varying one. 
   */
 
-  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
     This implementation is still somewhat experiemental and adds polynomial 
@@ -387,7 +387,7 @@ class mesh_free_2D : public mesh_free_differentiate
     And the same method for an adaptive shape parameter. 
   */
 
-  double create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+  double create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
     This line is needed because of function hiding in derived classes. 
@@ -482,7 +482,7 @@ class mesh_free_3D : public mesh_free_differentiate
     and a spatially varying one. 
   */
 
-  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+  double create_finite_differences_weights(string selection, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
     This implementation is still somewhat experiemental and adds polynomial 
@@ -496,7 +496,7 @@ class mesh_free_3D : public mesh_free_differentiate
     This is the version with polynomial support of arbitrary order and with adaptive shape parameter. 
   */
 
-  double create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function_shape *RBF, vector<double> *adaptive_shape_parameter);
+  double create_finite_differences_weights(string selection, unsigned int pdeg, vector<double> *weights, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
     This line is needed because of function hiding in derived classes. 
@@ -537,7 +537,7 @@ class mesh_free_3D : public mesh_free_differentiate
     And, accordingly, the version with adaptive shape parameter. 
   */
 
-  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function_shape *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
+  double interpolate(vector<double> *output_grid, vector<double> *input_function, vector<double> *output_function,  radial_basis_function *RBF, unsigned int pdeg, vector<double> *adaptive_shape_parameter, int knn = 16, int stride = 0);
 
 };
 
