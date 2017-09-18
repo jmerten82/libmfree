@@ -426,6 +426,11 @@ void mesh_free::build_tree(int nearest_neighbours)
     {
       throw invalid_argument("MFREE: invalid number of nearest neighbours.");
     }
+
+  if(num_nodes == 0)
+    {
+      throw runtime_error("MFREE: Cannot build tree for empty domain.");
+    }
   
   //Allocating kD tree related quantities
 
