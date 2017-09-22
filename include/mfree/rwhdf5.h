@@ -17,12 +17,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <hdf5.h>
-#include <H5Cpp.h>
 #include <mfree/mesh_free.h>
-
-#ifndef H5_NO_NAMESPACE
-    using namespace H5;
-#endif
 
 /*
   This writes all necessary data of a mesh free structure

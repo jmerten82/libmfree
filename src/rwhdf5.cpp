@@ -15,46 +15,43 @@
 void write_mfree_to_hdf5(mesh_free *input, string filename)
 {
 
-  //Creating HDF5 file
-  H5File file(filename, H5F_ACC_TRUNC);
+  hid_t file_id, dataset_id, attribute_id, attribute_type, dataspace_id;
+  herr_t status;
 
-  //Getting information about the grid
   hsize_t dims[2];
 
-  dims[1] = input->return_grid_size();
-  dims[0] = input->return_grid_size(1);
+  dims[0] = input->return_grid_size();
+  dims[1] = input->return_grid_size(1);
 
-  //Creating HDF5 dataspace for the grid coordinates
-  DataSpace dataspace(2,dims);
+  file_id = H5Fcreate(filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+  attribute_type = H5Tcopy(H5T_NATIVE_INT);
+  dataspace_id = H5Screate(H5S_SCALAR);
 
-  //And linking it to a dataset
-  DataSet dataset = file.createDataSet("Coordinates", H5T_NATIVE_DOUBLE, dataspace);
+  attribute_id = H5Acreate2 (file_id, "Dim",attribute_type, dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite(attribute_id,attribute_type,&dims[1]);
+  status = H5Aclose(attribute_id);
+  status = H5Sclose(dataspace_id);
+  dataspace_id = H5Screate(H5S_SCALAR);
+  attribute_id = H5Acreate2 (file_id, "Number of nodes",attribute_type, dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite(attribute_id,attribute_type,&dims[0]);
+  status = H5Aclose(attribute_id);
+  status = H5Sclose(dataspace_id);
 
-  //Reading out the nodes
   vector<double> temp;
 
-  for(int i = 0; i < dims[1]; i++)
+  for(int i = 0; i < dims[0]; i++)
     {
-      for(int j = 0; j < dims[0]; j++)
+      for(int j = 0; j < dims[1]; j++)
 	{ 
 	  temp.push_back((* input)(i,j));
 	}
     }
-
-  //Writing coordinates into dataset
-  dataset.write(&input[0], H5T_NATIVE_DOUBLE);
-
-  //Finally adding some attributes to the dataset
-  hsize_t dim[1] = {2};  
-  DataSpace attr_dataspace1 = DataSpace (1, dim);
-  DataSpace attr_dataspace2 = DataSpace (1, dim);
-  Attribute attribute1 = dataset.createAttribute("DIM", H5T_NATIVE_INT,attr_dataspace1);
-  Attribute attribute2 = dataset.createAttribute("#Nodes", H5T_NATIVE_INT,attr_dataspace2);
-  attribute1.write(H5T_NATIVE_INT, &dims[0]);
-  attribute2.write(H5T_NATIVE_INT, &dims[1]);
-
-  //No need to close dataspaces and sets in a C++ implementation.
-
+  dataspace_id = H5Screate_simple(2, dims, NULL);
+  dataset_id = H5Dcreate2(file_id, "coordinates", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,&temp[0]);
+  status = H5Dclose(dataset_id);
+  status = H5Sclose(dataspace_id);
+  status = H5Fclose(file_id);
 }
 
 
