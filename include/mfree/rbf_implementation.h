@@ -64,7 +64,7 @@ class gaussian_rbf : public radial_basis_function_shape
    phi(r) = sqrt(1+(eps*r)^2)
 **/
 
-class multiquadric_rbf : radial_basis_function_shape
+class multiquadric_rbf : public radial_basis_function_shape
 {
 
  protected:
@@ -104,7 +104,7 @@ class multiquadric_rbf : radial_basis_function_shape
    phi(r) = (1.+(eps*r)^2)^-1/2
 **/
 
-class inverse_multiquadric_rbf : radial_basis_function_shape
+class inverse_multiquadric_rbf : public radial_basis_function_shape
 {
 
  protected:
@@ -143,7 +143,7 @@ class inverse_multiquadric_rbf : radial_basis_function_shape
    phi(r) = (1.+(eps*r)^2)^-1
 **/
 
-class inverse_quadratic_rbf : radial_basis_function_shape
+class inverse_quadratic_rbf : public radial_basis_function_shape
 {
 
  protected:
