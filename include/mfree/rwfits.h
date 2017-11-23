@@ -500,7 +500,7 @@ template<> inline ValueType read_table_type<unsigned short> (vector<unsigned sho
 
 template<> inline int read_img_type<int> (vector<int> *input)
 {
-  return SHORT_IMG;
+  return LONG_IMG;
 }
 
 template<> inline int read_header_type<int> (int *input)
