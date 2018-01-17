@@ -48,6 +48,8 @@ class bengts_function : public test_function
     xx
     yy
     xy
+    Laplace
+    Neg_Laplace
   */
 
   double D(vector<double> coordinates, string selection = "x");

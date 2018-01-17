@@ -83,6 +83,16 @@ double bengts_function::D(vector<double> coordinates, string selection)
     {
       value = 0.;
     }
+  else if(selection == "Laplace")
+    {
+
+      value = -16. * sin(4. * x) - 9. * cos(3. *x) - 4. * sin(2. * y);
+    }
+  else if(selection == "Neg_Laplace")
+    {
+
+      value = -16. * sin(4. * x) - 9. * cos(3. *x) + 4. * sin(2. * y);
+    }
   else
     {
       throw invalid_argument("B_FUNCTION: Invalid derivative selection.");
