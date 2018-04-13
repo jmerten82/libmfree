@@ -166,11 +166,25 @@ vector<double> mesh_free_differentiate::create_finite_differences_weights_col(st
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col_ver2(string selection, radial_basis_function *RBF)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection, &aux, RBF);
+  return findif_row_col_convert_ver2(num_nodes, &kD_tree, &aux);
+}
+
 vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, int max_length)
 {
   vector<double> aux;
   create_finite_differences_weights(selection,pdeg, &aux, RBF);
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
+}
+
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col_ver2(string selection, unsigned int pdeg, radial_basis_function *RBF)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection,pdeg, &aux, RBF);
+  return findif_row_col_convert_ver2(num_nodes, &kD_tree, &aux);
 }
 
 vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length)
@@ -180,11 +194,25 @@ vector<double> mesh_free_differentiate::create_finite_differences_weights_col(st
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
 }
 
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col_ver2(string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection, &aux, RBF,adaptive_shape_parameter);
+  return findif_row_col_convert_ver2(num_nodes, &kD_tree, &aux);
+}
+
 vector<double> mesh_free_differentiate::create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length)
 {
   vector<double> aux;
   create_finite_differences_weights(selection, pdeg, &aux, RBF,adaptive_shape_parameter);
   return findif_row_col_convert(num_nodes, max_length, &kD_tree, &aux);
+}
+
+vector<double> mesh_free_differentiate::create_finite_differences_weights_col_ver2(string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter)
+{
+  vector<double> aux;
+  create_finite_differences_weights(selection, pdeg, &aux, RBF,adaptive_shape_parameter);
+  return findif_row_col_convert_ver2(num_nodes, &kD_tree, &aux);
 }
 
 mesh_free_1D::mesh_free_1D(mesh_free_1D &input)

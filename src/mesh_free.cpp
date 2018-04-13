@@ -508,6 +508,18 @@ int mesh_free::neighbours_col(vector<int> *neighbours, vector<int> *length_count
   
 }
 
+vector<int> mesh_free::neighbours_col_ver2(vector<int> *length_counter, int nearest_neighbours)
+{
+
+  if(kD_update)
+    {
+      build_tree(nearest_neighbours);
+    }
+
+  return findif_row_col_convert_ver2(num_nodes, &kD_tree, length_counter);
+  
+}
+
 vector<int> mesh_free::embed(mesh_free *input, int knn)
 {
 
@@ -1167,6 +1179,76 @@ vector<double> findif_row_col_convert(int dim, int max_length, vector<int> *knn_
 
   return coefficients_out;
  }
+
+
+vector<int> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<double> *coefficients_in, vector<double> *coefficients_out, vector<int> *col_lengths_out)
+{
+
+  int nn = tree_in->size() / dim;
+  int new_col_length = 2*nn;
+
+  vector<int> out(new_col_length*dim,-1);
+  col_lengths_out->resize(dim);
+  coefficients_out->resize(out.size());
+
+  for(int i = 0; i < dim; i++)
+    {
+      for(int j = 0; j < nn; j++)
+	{
+	  int index = (*tree_in)[i*nn+j];
+	  int current_count = (*col_lengths_out)[index];
+	  out[index*new_col_length+current_count] = i;
+	  (*coefficients_out)[index*new_col_length+current_count] = (*coefficients_in)[i*nn+j];
+	  (*col_lengths_out)[index] = ++current_count; 
+	}
+    } 
+
+  return out;
+}
+
+vector<int> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<int> *col_lengths_out)
+{
+
+  int nn = tree_in->size() / dim;
+  int new_col_length = 2*nn;
+
+  vector<int> out(new_col_length*dim,-1);
+  col_lengths_out->resize(dim);
+
+  for(int i = 0; i < dim; i++)
+    {
+      for(int j = 0; j < nn; j++)
+	{
+	  int index = (*tree_in)[i*nn+j];
+	  out[index*new_col_length+(*col_lengths_out)[index]] = i;
+	  (*col_lengths_out)[index]++; 
+	}
+    } 
+
+  return out;
+}
+
+vector<double> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<double> *coefficients_in)
+{
+
+  int nn = tree_in->size() / dim;
+  int new_col_length = 2*nn;
+  vector<int> count(dim,0);
+
+  vector<double> out(new_col_length*dim,0.);
+  for(int i = 0; i < dim; i++)
+    {
+      for(int j = 0; j < nn; j++)
+	{
+	  int index = (*tree_in)[i*nn+j];
+	  int current_count = count[index];
+	  out[index*new_col_length+current_count] = (*coefficients_in)[i*nn+j];
+	  count[index] = ++current_count;
+	}
+    } 
+
+  return out;
+}
 
 
 

@@ -259,6 +259,12 @@ class mesh_free
   int neighbours_col(vector<int> *neighbours, vector<int> *length_counter, int nearest_neighbours = 16);
 
   /*
+    This version of the routine is based on the new row_col convert routines.
+  */
+
+  vector<int> neighbours_col_ver2(vector<int> *length_counter, int nearest_neighbours = 16);
+
+  /*
     This routine takes another mesh-free structure, checks if dimensionalities
     match and embeds this strcuture in the existing grid. This means
     that it searches the knn nearest neighbours of all nodes of the input
@@ -313,6 +319,19 @@ int findif_row_col_convert(int dim, vector<int> *knn_in, vector<int> *knn_out, v
 
 vector<double> findif_row_col_convert(int dim, int max_length, vector<int> *knn_in, vector<double> *coefficients_in);
 
+/**
+   The following routines do the same job then the old row_col_convert ones, 
+   but ideally much quicker. There are three versions, the first one
+   returns the new col-ordered tree. The second one returns tree and one
+   coefficient vector, the last one 
+   only returns a new coefficient vector.
+**/
 
+vector<int> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<double> *coefficients_in, vector<double> *coefficients_out, vector<int> *col_lengths_out);
+
+vector<int> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<int> *col_lengths_out);
+
+vector<double> findif_row_col_convert_ver2(int dim, vector<int> *tree_in, vector<double> *coefficients_in);
+  
 
 #endif    /*MESH_FREE_H*/

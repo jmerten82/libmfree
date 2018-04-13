@@ -121,10 +121,20 @@ class mesh_free_differentiate : public mesh_free
   vector<double> create_finite_differences_weights_col(string selection, radial_basis_function *RBF, int max_length);
 
   /*
+    This routine does the same thing but uses the much faster helper routine
+    implementation. 
+  */
+
+  vector<double> create_finite_differences_weights_col_ver2(string selection, radial_basis_function *RBF);
+
+  /*
     This is the version of the routine above that also uses polynomial support of arbitrary order.
   */
 
   vector<double> create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, int max_length);
+
+  vector<double> create_finite_differences_weights_col_ver2(string selection, unsigned int pdeg, radial_basis_function *RBF);
+ 
 
   /*
     Again the same function as above but for a shaped RBF with varying 
@@ -133,11 +143,16 @@ class mesh_free_differentiate : public mesh_free
 
   vector<double> create_finite_differences_weights_col(string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length);
 
+  vector<double> create_finite_differences_weights_col_ver2(string selection, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
+
+
   /*
     Again, the version of the function above with polynomial support of arbitrary order.
   */
 
   vector<double> create_finite_differences_weights_col(string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter, int max_length);
+
+  vector<double> create_finite_differences_weights_col_ver2(string selection, unsigned int pdeg, radial_basis_function *RBF, vector<double> *adaptive_shape_parameter);
 
   /*
     Performs a derivative operation on a vector and returns the derivative. 
