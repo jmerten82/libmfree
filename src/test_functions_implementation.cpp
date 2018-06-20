@@ -223,7 +223,7 @@ double nfw_lensing_potential::D(vector<double> coordinates, string selection)
 	}
     }
 
-  else if(selection == "Laplace")
+  else if(selection == "Half_Laplace")
     {
       value *= 0.5;
       if(radius < 1.)

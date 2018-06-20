@@ -104,7 +104,7 @@ class nfw_lensing_potential : public test_function
     available are:
     x
     y
-    Laplace (this one actually returns 1/2 the Laplace)
+    Half_Laplace (this one actually returns 1/2 the Laplace)
   */
 
   double D(vector<double> coordinates, string selection = "x");
