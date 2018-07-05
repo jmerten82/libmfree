@@ -20,8 +20,7 @@ http://www.julianmerten.net
 */
 
 #define MAX_NN 128
-#define SHAPE_OPT_MAX_PDEG 10
-#define SHAPE_OPT_MAX_NN 256
+#define MAX_PDEG 10
 #define CONST_MEM_BLOCK_SIZE 8100
 #define ARRAY_CPY_THREAD_SIZE 128
 

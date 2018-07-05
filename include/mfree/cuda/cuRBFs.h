@@ -3,6 +3,8 @@
      which are implemented as device functions. 
      This header implements GA as default the default
      template for device RBFs.
+     This header also contains some declarations for 
+     helper functions which are then defined in the respective source file. 
 
 Julian Merten
 INAF OA Bologna
@@ -101,6 +103,27 @@ template<> __device__ double rbf<'g',0.,7>(double x, double y, double shape_squa
 {
   return 2.*shape_squared*exp(-shape_squared*r_squared)*((2.*shape_squared*x*x-1.)-(2.*shape_squared*y*y-1.));
 }
+
+
+/**
+   Some helper functions to fill the polynomial part of the 
+   RBF linear system of equations.
+**/
+
+/*
+  Given a x and y component this writes the polynomial portion of the 
+  RBF findif linear system into a pre-defined array.
+*/
+
+__device__ void row_vector_from_polynomial(double x, double y, int col_stride, int pdeg, double *row_ptr, double *col_ptr);
+
+/*
+  This is a simpler version of the above which only writes into one pointer.
+*/
+
+__device__ void row_vector_from_polynomial_simpler(double x, double y, int pdeg, double *row_ptr);
+
+
 
 
 #endif /* CUDA_RBF_H */
