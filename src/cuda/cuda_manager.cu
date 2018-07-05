@@ -472,7 +472,7 @@ void cuda_manager::allocate_FD_builder_memory()
 {
   if(!FD_allocations)
     {
-      long int nodes1_5 = num_nodes * SYSTEM_MAX_COL_LENGTH;
+      long int nodes1_5 = num_nodes * MAX_NN;
       size_t num_bytes = (8*num_nodes+8*nodes1_5)*sizeof(double);
       cudaError_t error;
       
@@ -769,13 +769,13 @@ double* cuda_manager::FD_device_pointer(string selection)
     {
       out = FD_pointers[current_device].dxy;
     }
-  else if(selection == "half_laplace")
+  else if(selection == "laplace")
     {
-      out = FD_pointers[current_device].half_laplace;
+      out = FD_pointers[current_device].laplace;
     }
-  else if(selection == "neg_half_laplace")
+  else if(selection == "neg_laplace")
     {
-      out = FD_pointers[current_device].neg_half_laplace;
+      out = FD_pointers[current_device].neg_laplace;
     }
   else if(selection == "function")
     {
@@ -869,7 +869,7 @@ void cuda_manager::switch_FD_weights_status(string selection)
 void cuda_manager::distribute_FD_weights(string selection, int src)
 {
   cudaError_t error;
-  size_t copy_size = sizeof(double)*num_nodes * SYSTEM_MAX_COL_LENGTH;
+  size_t copy_size = sizeof(double)*num_nodes * MAX_NN;
   if(selection == "dx")
     {
       if(!this->FD_weights_status(selection))
@@ -1031,12 +1031,12 @@ void cuda_manager::distribute_FD_weights(string selection, int src)
 		{
 		  throw runtime_error("CUDA_MAN: Could not distribute dxy.");
 		}
-	      error = cudaMemcpyPeer(FD_pointers[i].half_laplace,my_devices[i].second,FD_pointers[src].half_laplace,my_devices[src].second,copy_size);
+	      error = cudaMemcpyPeer(FD_pointers[i].laplace,my_devices[i].second,FD_pointers[src].laplace,my_devices[src].second,copy_size);
 	      if(error != cudaSuccess)
 		{
 		  throw runtime_error("CUDA_MAN: Could not distribute laplace.");
 		}
-	      error = cudaMemcpyPeer(FD_pointers[i].neg_half_laplace,my_devices[i].second,FD_pointers[src].neg_half_laplace,my_devices[src].second,copy_size);
+	      error = cudaMemcpyPeer(FD_pointers[i].neg_laplace,my_devices[i].second,FD_pointers[src].neg_laplace,my_devices[src].second,copy_size);
 	      if(error != cudaSuccess)
 		{
 		  throw runtime_error("CUDA_MAN: Could not distribute neg_laplace.");
@@ -1050,7 +1050,7 @@ void cuda_manager::distribute_FD(string selection, int src)
 {
   cudaError_t error;
   size_t copy_size1 = sizeof(double)*num_nodes;
-  size_t copy_size2 = copy_size1 * SYSTEM_MAX_COL_LENGTH;
+  size_t copy_size2 = copy_size1 * MAX_NN;
 
   if(selection == "")
     {

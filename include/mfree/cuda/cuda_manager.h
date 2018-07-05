@@ -32,7 +32,6 @@ http://www.julianmerten.net
 #include <cuda_runtime.h>
 #include <helper_cuda.h>
 #include <helper_timer.h>
-#include <mfree/cuda/cuda_manager_kernels.h>
 #include <mfree/mesh_free_differentiate.h>
 
 using namespace std;
