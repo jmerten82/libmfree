@@ -45,15 +45,38 @@ n, double* A);
 
 /*
   This CUDA kernel fills the coefficient matrix for weight calculation.
-  You need to provide RBF type and order.
-  Refer to cuRBFs.h for valid selections.
+  This is implemented as a template with the underlying RBF as template
+  parameter. RBF must be implemented as a class and an object passed
+  to __global__ function. 
+  Since this is a template, we write the full definition in here.
 */
 
-__global__ void cuFD_weights_matrix_part(int* tree, double *coordinates, double *shapes,int matrix_stride, int pdeg, double* A, char rbf_type, double rbf_order);
+template<class T> __global__ void cuFD_weights_matrix_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, int pdeg, double* A, T *rbf)
+{
+int offsetA = blockIdx.x*matrix_stride*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+
+  //Running over all neighbours in this point.
+  for(int i = 0; i < blockDim.x; i++)
+    {
+      double x = coordinates[i][0] - coordinates[threadIdx.x][0];
+      double y = coordinates[i][1] - coordinates[threadIdx.x][1];
+      //Setting changing part of coefficient matrix
+      A[offsetA+threadIdx.x*matrix_stride+i] = (*rbf)(x,y,shapes[blockIdx.x]);
+    }
+};
 
 /*
   This sets the vector part of the weight calculation. Now you also
-  need to provide the desied derivative. The current derivative order
+  need to provide the desired derivative. The current derivative order
   scheme is:
 
   1: d/dx
@@ -65,14 +88,293 @@ __global__ void cuFD_weights_matrix_part(int* tree, double *coordinates, double 
   7: d^2/dxx - d^2/dyy 
 */
 
-__global__ void cuFD_weights_vector_part(int* tree, double *coordinates, double *shapes,int matrix_stride, double* b, char rbf_type, double rbf_order, int derivative_order);
+template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, int derivative_order)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      switch(derivative_order)
+	{
+	case 1:
+	  {
+	    for(int i = blockDim.x+2; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 1)
+	      {
+		b[offsetb+blockDim.x+1] = 1.;
+	      }
+	  }
+	case 2:
+	  {
+	    for(int i = blockDim.x+3; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 1.;
+	      }
+	  }
+	case 3:
+	  {
+	    for(int i = blockDim.x+4; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 3)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.;
+		  }
+	      }
+
+	  }
+	case 4:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 0.;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = 2.;
+		  }
+	      }
+	  }
+	case 5:
+	  {
+	    for(int i = blockDim.x+5; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 4)
+		  {
+		    b[offsetb+blockDim.x+3] = 0.;
+		    b[offsetb+blockDim.x+4] = 1.;
+		  }
+	      }
+	  }
+	case 6:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = 2.;
+		  }
+	      }
+	  }
+	case 7:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = -2.;
+		  }
+	      }
+	  }
+	}
+    }
+}
 
 /*
   The same as above, but this gives the opportunity to multiply
   the derivative operator with a given factor. 
 */
 
-__global__ void cuFD_weights_vector_part(int* tree, double *coordinates, double *shapes,int matrix_stride, double* b, char rbf_type, double rbf_order, int derivative_order, double factor);
+template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, int derivative_order, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      switch(derivative_order)
+	{
+	case 1:
+	  {
+	    for(int i = blockDim.x+2; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 1)
+	      {
+		b[offsetb+blockDim.x+1] = factor;
+	      }
+	  }
+	case 2:
+	  {
+	    for(int i = blockDim.x+3; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = factor;
+	      }
+	  }
+	case 3:
+	  {
+	    for(int i = blockDim.x+4; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 3)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.*factor;
+		  }
+	      }
+
+	  }
+	case 4:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 0.;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = 2.*factor;
+		  }
+	      }
+	  }
+	case 5:
+	  {
+	    for(int i = blockDim.x+5; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 4)
+		  {
+		    b[offsetb+blockDim.x+3] = 0.;
+		    b[offsetb+blockDim.x+4] = factor;
+		  }
+	      }
+	  }
+	case 6:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.*factor;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = 2.*factor;
+		  }
+	      }
+	  }
+	case 7:
+	  {
+	    for(int i = blockDim.x+6; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 2)
+	      {
+		b[offsetb+blockDim.x+1] = 0.;
+		b[offsetb+blockDim.x+2] = 0.;
+		if((matrix_stride - blockDim.x) > 5)
+		  {
+		    b[offsetb+blockDim.x+3] = 2.*factor;
+		    b[offsetb+blockDim.x+4] = 0.;
+		    b[offsetb+blockDim.x+5] = -2.*factor;
+		  }
+	      }
+	  }
+	}
+    }
+}
+
 
 /**
    differentiate
@@ -103,14 +405,80 @@ __global__ void cuFD_differentiate_product(double *f, double *w, double *d);
   constant under a changing shape parameter. 
 */
 
-__global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, char rbf_type, double rbf_order, int derivative_order);
+__global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order);
+
+/*
+  As before the version which lets you mulitply the derivative operator 
+  with a factor.
+*/
+
+__global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order, double factor);
+
 
 /*
   This kernel calculates the parts of the LSE which change under a change
   of shape parameter. 
 */
 
-__global__ void cuFD_optimise_shape_dependent_part(int* tree, double *coordinates, double *shapes,int matrix_stride, double* A, double *b, char rbf_type, double rbf_order, int derivative_order);
+template<class T> __global__ void cuFD_optimise_shape_dependent_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* A, double *b, T *rbf, int derivative_order)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Running over all neighbours in this point.
+  for(int i = 0; i < blockDim.x; i++)
+    {
+      double x = coordinates[i][0] - coordinates[threadIdx.x][0];
+      double y = coordinates[i][1] - coordinates[threadIdx.x][1];
+      //Setting changing part of coefficient matrix
+      A[offsetA+threadIdx.x*matrix_stride+i] = (*rbf)(-x,-y,shapes[blockIdx.x]);
+
+    }
+  //Setting changing part of result vector
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+};
+
+/*
+  And again an additional version which lets you multiple the derivative
+  operator with a constant.
+*/
+
+template<class T> __global__ void cuFD_optimise_shape_dependent_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* A, double *b, T *rbf, int derivative_order, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Running over all neighbours in this point.
+  for(int i = 0; i < blockDim.x; i++)
+    {
+      double x = coordinates[i][0] - coordinates[threadIdx.x][0];
+      double y = coordinates[i][1] - coordinates[threadIdx.x][1];
+      //Setting changing part of coefficient matrix
+      A[offsetA+threadIdx.x*matrix_stride+i] = (*rbf)(-x,-y,shapes[blockIdx.x]);
+
+    }
+  //Setting changing part of result vector
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+
+};
 
 /*
   Same as above but lets you multiply the derivative operator with a 
