@@ -6,8 +6,9 @@ NVCC		=	$(CUDAROOT)/bin/nvcc
 NVCCFLAG	=	-Xcompiler '-fPIC -fopenmp' 
 CUDALIB		=	$(CUDAROOT)/lib64
 CUDAINC 	=	$(CUDAROOT)/include
+CUDASAMPLEINC 	=	$(CUDAROOT)/samples/common/inc
 MFREEINC 	=	$(MFREEROOT)/include
-ADDINC		=	-I$(MFREEINC) -I$(CUDAINC)
+ADDINC		=	-I$(MFREEINC) -I$(CUDAINC) -I$(CUDASAMPLEINC)
 MFREECUDALINK	=	$(MFREECUDAROOT)/cuda_libmfree_link.o
 MFREECUDALIB	=	$(MFREEROOT)/libcudamfree.so
 
