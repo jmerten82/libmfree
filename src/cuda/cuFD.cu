@@ -120,4 +120,52 @@ void cuFD_differentiate(int derivative_selection, cuda_manager *cuman)
 vector<vector<double> > cuFD_differentiate(cuda_manager *cuman)
 {
 
+  //Numbers
+  int num_nodes = cuman->n("nodes");
+  int nn = cuman->n("nn");
+
+  //Setting device to first one in line
+  checkCudaErrors(cudaSetDevice(cuman->device_query(0).second));
+
+  //Setting up output
+  vector<vector<double> > result(7,vector<double>(num_nodes,0.));
+
+  if(nn == 2 || nn == 4 || nn == 8 || nn == 16 || nn == 32 || nn == 64 || nn == 128)
+    {
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dx"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[0][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[1][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dxx"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[2][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dyy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[3][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dxy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[4][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("laplace"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[5][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product_pow2<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("neg_laplace"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[6][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+    }
+
+ else
+   {
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dx"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[0][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[1][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dxx"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[2][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dyy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[3][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("dxy"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[4][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("laplace"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[5][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+     cuFD_differentiate_product<<<num_nodes,nn>>>(cuman->FD_device_pointer("function"),cuman->FD_device_pointer("neg_laplace"),cuman->FD_device_pointer("derivative"));
+     checkCudaErrors(cudaMemcpy(&result[6][0],cuman->FD_device_pointer("derivative"),num_nodes*sizeof(double),cudaMemcpyDeviceToHost));
+   }
+
+  return result;
+
 }
