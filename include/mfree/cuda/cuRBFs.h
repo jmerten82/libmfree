@@ -18,7 +18,9 @@ http://www.julianmerten.net
 #define    CUDA_RBF_H
 
 #include <mfree/cuda/cuda_manager.h>
-//#include <mfree/cuda/cuRBFs_quadric.h>
+#include <mfree/cuda/cuRBFs_quadric.h>
+#include <mfree/cuda/cuRBFs_wendland.h>
+#include <mfree/cuda/cuRBFs_phs.h>
 
 /**
    Here the very basic implementations of the functions we need, we
