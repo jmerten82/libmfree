@@ -327,6 +327,24 @@ void cuFD_test_weight_functions(cuda_manager *cuman, int n)
   cout <<"Runtime for setting vector part via hard-wired implementation: " <<elapsed_time/((double) n) <<"msec." <<endl;
   elapsed_time = 0.;
 
+  //Setting vector part with class implementation and hard-wired derivative
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_vector_part_dx<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b,rbf1); 
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting vector part via class and hard-wired derivative: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+
   //Setting vector part with regular class implementation
   //Calling kernel n+1 times and timing, first call is not timed
   for(int i = 0; i < n+1; i++)

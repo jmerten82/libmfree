@@ -237,6 +237,47 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 }
 
 /*
+  This version hard-wires the derivative but leaves the RBF to the 
+  template.
+*/
+
+template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      switch(derivative_order)
+	{
+	case 1:
+	  {
+	    for(int i = blockDim.x+2; i < matrix_stride; i++)
+	      {
+		b[offsetb+i] = 0;
+	      }
+	    b[offsetb+blockDim.x] = 0.;
+	    if((matrix_stride - blockDim.x) > 1)
+	      {
+		b[offsetb+blockDim.x+1] = 1.;
+	      }
+	
+	      }
+	}
+    }
+}
+
+/*
   This is a agaibn a ga-rbf hard-wired version of the vector part. 
   In addition, it is also hard-wired to the x derivative. This
   is all for performance comparison.
