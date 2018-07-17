@@ -18,6 +18,7 @@ http://www.julianmerten.net
 #include <cublas_v2.h>
 #include <omp.h>
 #include <mfree/cuda/cuda_manager.h>
+#include <mfree/cuda/cuRBFs.h>
 #include <mfree/cuda/cuFD_kernels.h>
 #include <mfree/test_functions.h>
 
@@ -38,6 +39,8 @@ using namespace std;
 
    differentiate: Calculates the derivatives if shapes are available
    on the device.
+
+   test: Tests, times and debugs kernels.
 
    For all these routines, the derivative selection follows this scheme. 
    
@@ -173,11 +176,11 @@ template<class T> void cuFD_weights_set(T *rbf, vector<double> shapes, cuda_mana
   //Calculating result vectors and solving system
   if(factor == 1.)
     {
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer(pointer_pointers[0]),matrix_stride,d_b,rbf,derivative_selection); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer(pointer_pointers[0]),matrix_stride,d_b,rbf,derivative_selection); 
     }
   else
     {
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer(pointer_pointers[0]),matrix_stride,d_b,rbf,derivative_selection,factor);
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer(pointer_pointers[0]),matrix_stride,d_b,rbf,derivative_selection,factor);
     }
 
   cublasDgetrsBatched(handle,CUBLAS_OP_N,matrix_stride,1,(const double**)d_A_pointers,matrix_stride,d_pivotArray,d_b_pointers,matrix_stride,&info,num_nodes);
@@ -819,5 +822,12 @@ template <class T> vector<double> cuFD_optimise_shapes(T *rbf, int derivative_or
   
   return h_shapes;
 };
+
+/*
+  This times and tests the existing seit_weights kernels. n is the number
+  of times all kernels are called before runtime/n is returned in ms. 
+*/
+
+void cuFD_test_weight_functions(cuda_manager *cuman, int n = 100);
 
 #endif /* CUDA_FD_H */

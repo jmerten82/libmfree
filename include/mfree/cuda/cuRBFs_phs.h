@@ -678,6 +678,446 @@ __device__ inline double phs10_neg_laplace(double x, double y, double shape_squa
       return aux3*aux3*aux3*(18.*(aux2-aux)+40.*(aux2-aux)*log(aux3));
     }
 };
+
+
+class phs1_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs1(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs1_dx(x,y,shape_squared);
+      case 2: res = phs1_dx(y,x,shape_squared);
+      case 3: res = phs1_dxx(x,y,shape_squared);
+      case 4: res = phs1_dxx(y,x,shape_squared);
+      case 5: res = phs1_dxy(x,y,shape_squared);
+      case 6: res = phs1_laplace(x,y,shape_squared);
+      case 7: res = phs1_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs1_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs1_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs1_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs1_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs1_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs2_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs2(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs2_dx(x,y,shape_squared);
+      case 2: res = phs2_dx(y,x,shape_squared);
+      case 3: res = phs2_dxx(x,y,shape_squared);
+      case 4: res = phs2_dxx(y,x,shape_squared);
+      case 5: res = phs2_dxy(x,y,shape_squared);
+      case 6: res = phs2_laplace(x,y,shape_squared);
+      case 7: res = phs2_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs2_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs2_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs2_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs2_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs2_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs3_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs3(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs3_dx(x,y,shape_squared);
+      case 2: res = phs3_dx(y,x,shape_squared);
+      case 3: res = phs3_dxx(x,y,shape_squared);
+      case 4: res = phs3_dxx(y,x,shape_squared);
+      case 5: res = phs3_dxy(x,y,shape_squared);
+      case 6: res = phs3_laplace(x,y,shape_squared);
+      case 7: res = phs3_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs3_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs3_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs3_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs3_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs3_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs4_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs4(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs4_dx(x,y,shape_squared);
+      case 2: res = phs4_dx(y,x,shape_squared);
+      case 3: res = phs4_dxx(x,y,shape_squared);
+      case 4: res = phs4_dxx(y,x,shape_squared);
+      case 5: res = phs4_dxy(x,y,shape_squared);
+      case 6: res = phs4_laplace(x,y,shape_squared);
+      case 7: res = phs4_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs4_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs4_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs4_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs4_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs4_neg_laplace(x,y,shape_squared);
+  }
+};
   
+class phs5_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs5(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs5_dx(x,y,shape_squared);
+      case 2: res = phs5_dx(y,x,shape_squared);
+      case 3: res = phs5_dxx(x,y,shape_squared);
+      case 4: res = phs5_dxx(y,x,shape_squared);
+      case 5: res = phs5_dxy(x,y,shape_squared);
+      case 6: res = phs5_laplace(x,y,shape_squared);
+      case 7: res = phs5_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs5_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs5_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs5_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs5_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs5_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs6_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs6(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs6_dx(x,y,shape_squared);
+      case 2: res = phs6_dx(y,x,shape_squared);
+      case 3: res = phs6_dxx(x,y,shape_squared);
+      case 4: res = phs6_dxx(y,x,shape_squared);
+      case 5: res = phs6_dxy(x,y,shape_squared);
+      case 6: res = phs6_laplace(x,y,shape_squared);
+      case 7: res = phs6_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs6_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs6_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs6_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs6_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs6_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs7_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs7(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs7_dx(x,y,shape_squared);
+      case 2: res = phs7_dx(y,x,shape_squared);
+      case 3: res = phs7_dxx(x,y,shape_squared);
+      case 4: res = phs7_dxx(y,x,shape_squared);
+      case 5: res = phs7_dxy(x,y,shape_squared);
+      case 6: res = phs7_laplace(x,y,shape_squared);
+      case 7: res = phs7_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs7_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs7_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs7_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs7_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs7_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs8_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs8(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs8_dx(x,y,shape_squared);
+      case 2: res = phs8_dx(y,x,shape_squared);
+      case 3: res = phs8_dxx(x,y,shape_squared);
+      case 4: res = phs8_dxx(y,x,shape_squared);
+      case 5: res = phs8_dxy(x,y,shape_squared);
+      case 6: res = phs8_laplace(x,y,shape_squared);
+      case 7: res = phs8_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs8_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs8_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs8_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs8_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs8_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs9_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs9(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs9_dx(x,y,shape_squared);
+      case 2: res = phs9_dx(y,x,shape_squared);
+      case 3: res = phs9_dxx(x,y,shape_squared);
+      case 4: res = phs9_dxx(y,x,shape_squared);
+      case 5: res = phs9_dxy(x,y,shape_squared);
+      case 6: res = phs9_laplace(x,y,shape_squared);
+      case 7: res = phs9_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs9_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs9_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs9_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs9_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs9_neg_laplace(x,y,shape_squared);
+  }
+};
+
+class phs10_rbf
+{
+ public:
+  __device__ double operator() (double x, double y, double shape_squared)
+  {
+    return phs10(x,y,shape_squared);
+  };
+  __device__ double D(double x, double y, double shape_squared, int selection)
+  {
+    double res;
+    switch(selection)
+      {
+      case 1: res = phs10_dx(x,y,shape_squared);
+      case 2: res = phs10_dx(y,x,shape_squared);
+      case 3: res = phs10_dxx(x,y,shape_squared);
+      case 4: res = phs10_dxx(y,x,shape_squared);
+      case 5: res = phs10_dxy(x,y,shape_squared);
+      case 6: res = phs10_laplace(x,y,shape_squared);
+      case 7: res = phs10_neg_laplace(x,y,shape_squared);
+      }
+    return res;
+  };
+  __device__ double dx(double x, double y, double shape_squared)
+  {
+    return phs10_dx(x,y,shape_squared);
+  };
+  __device__ double dxx(double x, double y, double shape_squared)
+  {
+    return phs10_dxx(x,y,shape_squared);
+  };
+  __device__ double dxy(double x, double y, double shape_squared)
+  {
+    return phs10_dxy(x,y,shape_squared);
+  };
+  __device__ double laplace(double x, double y, double shape_squared)
+  {
+    return phs10_laplace(x,y,shape_squared);
+  }
+  __device__ double neg_laplace(double x, double y, double shape_squared)
+  {
+    return phs10_neg_laplace(x,y,shape_squared);
+  }
+};
 
 #endif /* CUDA_RBFPHS_H */

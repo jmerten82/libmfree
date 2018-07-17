@@ -169,3 +169,180 @@ vector<vector<double> > cuFD_differentiate(cuda_manager *cuman)
   return result;
 
 }
+
+void cuFD_test_weight_functions(cuda_manager *cuman, int n)
+{
+  //CUDA events for timing
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float elapsed_time = 0.;
+  float increment = 0.;
+
+  //Creating Gaussian RBF
+  ga_rbf *rbf1 = new ga_rbf;
+  phs4_rbf *rbf2 = new phs4_rbf;
+
+  //Problem size
+  int num_nodes = cuman->n("nodes");
+  int nn = cuman->n("nn");
+  int pdeg = cuman->n("pdeg");
+
+  vector<double> shapes(num_nodes,1.0);
+  int polynomial = (pdeg+1)*(pdeg+2)/2;
+  int matrix_stride = nn+polynomial;
+
+  //Setting device to first available.
+  checkCudaErrors(cudaSetDevice(cuman->device_query().second));
+
+
+  //Allocating necessary cublas structures
+  cublasHandle_t handle;
+  cublasCreate(&handle);
+  int *d_pivotArray;
+  int *d_infoArray;
+  checkCudaErrors(cudaMalloc((void **)&d_pivotArray, sizeof(int)*num_nodes*matrix_stride));
+  checkCudaErrors(cudaMalloc((void **)&d_infoArray, sizeof(int)*num_nodes));
+
+  //Getting shapes on device
+  checkCudaErrors(cudaMemcpy(cuman->FD_device_pointer("dx_shapes"),&shapes[0],num_nodes*sizeof(double),cudaMemcpyHostToDevice));
+
+  //Allocating working memory for weight creation
+  double *d_A; //This will hold all coefficient matrices for all nodes
+  double *d_b; //This will hold all result vectors for all nodes
+  checkCudaErrors(cudaMalloc((void **)&d_A, sizeof(double)*matrix_stride*matrix_stride*num_nodes));
+  checkCudaErrors(cudaMalloc((void **)&d_b, sizeof(double)*matrix_stride*num_nodes));
+
+  //Creating pointer array on host for coefficient matrices and copying to device
+  double **d_A_pointers;
+  double *A_pointers[num_nodes];
+  for(int i = 0; i < num_nodes; i++)
+    {
+      A_pointers[i] = d_A+i*matrix_stride*matrix_stride;
+    }
+  checkCudaErrors(cudaMalloc((void **)&d_A_pointers,num_nodes*sizeof(double*)));
+  checkCudaErrors(cudaMemcpy(d_A_pointers,A_pointers,num_nodes*sizeof(double *),cudaMemcpyHostToDevice));
+
+  //First timing...setting things to 0.
+
+  //Setting lower right block of A to 0.
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_set_zeros<<<num_nodes,polynomial>>>(matrix_stride,polynomial,nn,d_A);  
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting part of A to 0: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting matrix part with RBF class implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_matrix_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,pdeg,d_A,rbf1);  
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting matrix part via class: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting matrix part with hard-wired implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_ga_weights_matrix_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,pdeg,d_A);  
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting matrix part via hard-wired imeplentation: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting matrix part with phs4 implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_matrix_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,pdeg,d_A,rbf2);
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting matrix part via phs4: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting vector part with regular class implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b,rbf1,1); 
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting vector part via class: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting vector part with regular class implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_ga_dx_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b); 
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting vector part via hard-wired implementation: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+  //Setting vector part with regular class implementation
+  //Calling kernel n+1 times and timing, first call is not timed
+  for(int i = 0; i < n+1; i++)
+    {
+      cudaEventRecord(start);
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b,rbf2,1); 
+      cudaEventRecord(stop);
+      if(i != 0)
+	{
+	  cudaEventSynchronize(stop);
+	  cudaEventElapsedTime(&increment,start,stop);
+	  elapsed_time += increment;
+	}
+    }
+  cout <<"Runtime for setting vector part via phs4: " <<elapsed_time/((double) n) <<"msec." <<endl;
+  elapsed_time = 0.;
+
+
+}

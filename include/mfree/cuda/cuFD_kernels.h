@@ -53,7 +53,7 @@ n, double* A);
 
 template<class T> __global__ void cuFD_weights_matrix_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, int pdeg, double* A, T *rbf)
 {
-int offsetA = blockIdx.x*matrix_stride*matrix_stride;
+  int offsetA = blockIdx.x*matrix_stride*matrix_stride;
 
   //Getting all nearest neighbours in the shared memory
   __shared__ double coordinates[MAX_NN][2];
@@ -73,6 +73,13 @@ int offsetA = blockIdx.x*matrix_stride*matrix_stride;
       A[offsetA+threadIdx.x*matrix_stride+i] = (*rbf)(x,y,shapes[blockIdx.x]);
     }
 };
+
+/*
+  This is a Gaussian hard-wired version of the matrix weight set. Mostly
+  for performance comparison.
+*/
+
+__global__ void cuFD_ga_weights_matrix_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, int pdeg, double* A);
 
 /*
   This sets the vector part of the weight calculation. Now you also
@@ -228,6 +235,15 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 	}
     }
 }
+
+/*
+  This is a agaibn a ga-rbf hard-wired version of the vector part. 
+  In addition, it is also hard-wired to the x derivative. This
+  is all for performance comparison.
+*/
+
+__global__ void cuFD_ga_dx_weights_vector_part(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b);
+
 
 /*
   The same as above, but this gives the opportunity to multiply
