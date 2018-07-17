@@ -253,7 +253,7 @@ template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double 
   int offsetb = blockIdx.x*matrix_stride;
   double x = coordinates[threadIdx.x][0];
   double y = coordinates[threadIdx.x][1];
-  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],derivative_order);
+  b[offsetb+threadIdx.x] = ga_dx(-x,-y,shapes[blockIdx.x]);
 
   //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
   if(threadIdx.x == 0)
