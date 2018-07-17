@@ -49,6 +49,9 @@ int main(int argc, char* argv[])
  cm.reset(&mf,pdeg);
  cout <<endl;
 
+ cout <<"Testing weight kernels" <<endl <<endl;
+
+ cuFD_test_weight_functions(&cm);
 
 
  return 0;
