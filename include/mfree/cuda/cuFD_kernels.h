@@ -258,21 +258,14 @@ template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double 
   //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
   if(threadIdx.x == 0)
     {
-      switch(derivative_order)
+      for(int i = blockDim.x+2; i < matrix_stride; i++)
 	{
-	case 1:
-	  {
-	    for(int i = blockDim.x+2; i < matrix_stride; i++)
-	      {
-		b[offsetb+i] = 0;
-	      }
-	    b[offsetb+blockDim.x] = 0.;
-	    if((matrix_stride - blockDim.x) > 1)
-	      {
-		b[offsetb+blockDim.x+1] = 1.;
-	      }
-	
-	      }
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 1)
+	{
+	  b[offsetb+blockDim.x+1] = 1.;
 	}
     }
 }
