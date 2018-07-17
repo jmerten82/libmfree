@@ -172,13 +172,6 @@ vector<vector<double> > cuFD_differentiate(cuda_manager *cuman)
 
 void cuFD_test_weight_functions(cuda_manager *cuman, int n)
 {
-  //CUDA events for timing
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventCreate(&stop);
-  float elapsed_time = 0.;
-  float increment = 0.;
-
   //Creating Gaussian RBF
   ga_rbf *rbf1 = new ga_rbf;
   phs4_rbf *rbf2 = new phs4_rbf;
@@ -194,6 +187,14 @@ void cuFD_test_weight_functions(cuda_manager *cuman, int n)
 
   //Setting device to first available.
   checkCudaErrors(cudaSetDevice(cuman->device_query().second));
+
+  //CUDA events for timing
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+  float elapsed_time = 0.;
+  float increment = 0.;
+
 
 
   //Allocating necessary cublas structures
