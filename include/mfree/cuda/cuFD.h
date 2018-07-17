@@ -369,13 +369,13 @@ cuFD_weights_matrix_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coo
   //Calculating result vectors and solving system
   if(factor == 1.)
     {
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b1,rbf,1); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dy_shapes"),matrix_stride,d_b2,rbf,2); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dxx_shapes"),matrix_stride,d_b3,rbf,3); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dyy_shapes"),matrix_stride,d_b4,rbf,4); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dxy_shapes"),matrix_stride,d_b5,rbf,5); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("laplace_shapes"),matrix_stride,d_b6,rbf,6); 
-      cuFD_weights_ga_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("neg_laplace_shapes"),matrix_stride,d_b7,rbf,7); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_b1,rbf,1); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dy_shapes"),matrix_stride,d_b2,rbf,2); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dxx_shapes"),matrix_stride,d_b3,rbf,3); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dyy_shapes"),matrix_stride,d_b4,rbf,4); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dxy_shapes"),matrix_stride,d_b5,rbf,5); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("laplace_shapes"),matrix_stride,d_b6,rbf,6); 
+      cuFD_weights_vector_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("neg_laplace_shapes"),matrix_stride,d_b7,rbf,7); 
     }
   else
     {
@@ -716,11 +716,11 @@ template <class T> vector<double> cuFD_optimise_shapes(T *rbf, int derivative_or
 
 	  if(factor == 1.0)
 	    {
-	      cuFD_optimise_shape_dependent_part_dx<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_A,d_b,rbf,derivative_order);
+	      cuFD_optimise_shape_dependent_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_A,d_b,rbf,derivative_order);
 	    }
 	  else
 	    {
-	      cuFD_optimise_shape_dependent_part_dx<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_A,d_b,rbf,derivative_order,factor);
+	      cuFD_optimise_shape_dependent_part<<<num_nodes,nn>>>(cuman->index_map_pointer(),cuman->coordinate_pointer(),cuman->FD_device_pointer("dx_shapes"),matrix_stride,d_A,d_b,rbf,derivative_order,factor);
 	    }
 
 	  //Use cuBLAS batch mode to solve all systems	  
