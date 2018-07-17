@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
  //Setting cuda manager up for current mesh-free domain
  cout <<"Setting up the devices for FD given a mesh-free domain." <<endl;
  cm.reset(&mf,pdeg);
+ cm.allocate_FD_builder_memoery();
  cout <<endl;
 
  cout <<"Testing weight kernels" <<endl <<endl;

@@ -725,7 +725,7 @@ double* cuda_manager::FD_device_pointer(string selection)
     {
       out = FD_pointers[current_device].dx_shapes;
     }
-  if(selection == "dy_shapes")
+  else if(selection == "dy_shapes")
     {
       out = FD_pointers[current_device].dy_shapes;
     }
