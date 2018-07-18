@@ -262,6 +262,253 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
     }
 }
 
+__global__ void cuFD_optimise_const_part_dx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+2; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 1)
+	{
+	  b[offsetb+blockDim.x+1] = 1.;
+	}
+    }
+}
+__global__ void cuFD_optimise_const_part_dy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+3; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 1.;
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dxx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+4; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 3)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dyy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dxy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+5; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 4)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 1.;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.;
+	    }
+	}
+    }
+}
+__global__ void cuFD_optimise_const_part_neg_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = -2.;
+	    }
+	}
+    }
+}
 __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order, double factor)
 {
 
@@ -404,6 +651,254 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 	}
     }
 }
+__global__ void cuFD_optimise_const_part_dx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+2; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 1)
+	{
+	  b[offsetb+blockDim.x+1] = factor;
+	}
+    }
+}
+__global__ void cuFD_optimise_const_part_dy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+3; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = factor;
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dxx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+4; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 3)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dyy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.*factor;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_dxy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+5; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 4)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = factor;
+	    }
+	}
+    }
+}
+
+__global__ void cuFD_optimise_const_part_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.*factor;
+	    }
+	}
+    }
+}
+__global__ void cuFD_optimise_const_part_neg_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor)
+{
+
+  int offsetb = blockIdx.x*matrix_stride;
+  int offsetA = offsetb*matrix_stride;
+
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  row_vector_from_polynomial(coordinates[threadIdx.x][0],coordinates[threadIdx.x][1],matrix_stride, pdeg,&A[offsetA+threadIdx.x*matrix_stride+blockDim.x],&A[offsetA+blockDim.x*matrix_stride+threadIdx.x]);
+  b[offsetb+threadIdx.x] = 0;
+ 
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = -2.*factor;
+	    }
+	}
+    }
+}
+
 
 __global__ void cuFD_optimise_func_eval(int *tree, double *func, double *nn_func)
 {

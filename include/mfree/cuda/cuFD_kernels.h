@@ -253,7 +253,7 @@ template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double 
   int offsetb = blockIdx.x*matrix_stride;
   double x = coordinates[threadIdx.x][0];
   double y = coordinates[threadIdx.x][1];
-  b[offsetb+threadIdx.x] = ga_dx(-x,-y,shapes[blockIdx.x]);
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],1);
 
   //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
   if(threadIdx.x == 0)
@@ -270,8 +270,452 @@ template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double 
     }
 }
 
+template<class T> __global__ void cuFD_weights_vector_part_dy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],2);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+3; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 1.;
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dxx(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],3);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+4; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 3)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dyy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] =rbf->D(-x,-y,shapes[blockIdx.x],4);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dxy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],5);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+5; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 4)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 1.;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_laplace(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],6);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_neg_laplace(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = rbf->D(-x,-y,shapes[blockIdx.x],7);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = -2.;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dx(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],1);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+2; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 1)
+	{
+	  b[offsetb+blockDim.x+1] = factor;
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],2);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+3; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = factor;
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dxx(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],3);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+4; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 3)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dyy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],4);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.*factor;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_dxy(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],5);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+5; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 4)
+	    {
+	      b[offsetb+blockDim.x+3] = 0.;
+	      b[offsetb+blockDim.x+4] = factor;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_laplace(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],6);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = 2.*factor;
+	    }
+	}
+    }
+}
+
+template<class T> __global__ void cuFD_weights_vector_part_neg_laplace(int* tree, double *all_coordinates, double *shapes,int matrix_stride, double* b, T *rbf, double factor)
+{
+  //Getting all nearest neighbours in the shared memory
+  __shared__ double coordinates[MAX_NN][2];
+  int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  coordinates[threadIdx.x][0] = all_coordinates[index*2] - all_coordinates[blockIdx.x*2];
+  coordinates[threadIdx.x][1] = all_coordinates[index*2+1] - all_coordinates[blockIdx.x*2+1];
+  __syncthreads();
+
+  int offsetb = blockIdx.x*matrix_stride;
+  double x = coordinates[threadIdx.x][0];
+  double y = coordinates[threadIdx.x][1];
+  b[offsetb+threadIdx.x] = factor*rbf->D(-x,-y,shapes[blockIdx.x],7);
+
+  //ugly, pot probably not too harmfull, actually I checked and their is virtually no runtime difference
+  if(threadIdx.x == 0)
+    {
+      for(int i = blockDim.x+6; i < matrix_stride; i++)
+	{
+	  b[offsetb+i] = 0;
+	}
+      b[offsetb+blockDim.x] = 0.;
+      if((matrix_stride - blockDim.x) > 2)
+	{
+	  b[offsetb+blockDim.x+1] = 0.;
+	  b[offsetb+blockDim.x+2] = 0.;
+	  if((matrix_stride - blockDim.x) > 5)
+	    {
+	      b[offsetb+blockDim.x+3] = 2.*factor;
+	      b[offsetb+blockDim.x+4] = 0.;
+	      b[offsetb+blockDim.x+5] = -2.*factor;
+	    }
+	}
+    }
+}
+
+
 /*
-  This is a agaibn a ga-rbf hard-wired version of the vector part. 
+  This is a again a ga-rbf hard-wired version of the vector part. 
   In addition, it is also hard-wired to the x derivative. This
   is all for performance comparison.
 */
@@ -458,11 +902,49 @@ __global__ void cuFD_differentiate_product(double *f, double *w, double *d);
 __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order);
 
 /*
+  Specialised versions of the above for specific derivaitves.
+*/
+
+__global__ void cuFD_optimise_const_part_dx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_dy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_dxx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_dyy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_dxy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+__global__ void cuFD_optimise_const_part_neg_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b);
+
+
+/*
   As before the version which lets you mulitply the derivative operator 
   with a factor.
 */
 
 __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, int derivative_order, double factor);
+
+/*
+  Specialised versions of the above for specific derivaitves.
+*/
+
+__global__ void cuFD_optimise_const_part_dx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_dy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_dxx(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_dyy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_dxy(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
+__global__ void cuFD_optimise_const_part_neg_laplace(int* tree, double *all_coordinates, int matrix_stride, int pdeg, double* A, double *b, double factor);
+
 
 
 /*
