@@ -188,12 +188,11 @@ template<class T> void cuFD_weights_set(T *rbf, vector<double> shapes, cuda_mana
   checkCudaErrors(cudaMemcpy2D(cuman->FD_device_pointer(pointer_pointers[1]),sizeof(double)*nn,d_b,sizeof(double)*matrix_stride,sizeof(double)*nn,num_nodes,cudaMemcpyDeviceToDevice));
 
   //Sending result to all devices
-  cuman->distribute_FD_weights(pointer_pointers[1]);
-
   if(!cuman->FD_weights_status(pointer_pointers[1]))
     {
       cuman->switch_FD_weights_status(pointer_pointers[1]);
     }
+  cuman->distribute_FD_weights(pointer_pointers[1]);
 
   //Destroying cublas handle
   cublasDestroy(handle);
