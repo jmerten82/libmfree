@@ -224,13 +224,63 @@ template<> __device__ double rbf<'g',0,7>(double x, double y, double shape_squar
   RBF findif linear system into a pre-defined array.
 */
 
-__device__ void row_vector_from_polynomial(double x, double y, int col_stride, int pdeg, double *row_ptr, double *col_ptr);
+__device__ inline void row_vector_from_polynomial(double x, double y, int col_stride, int pdeg, double *row_ptr, double *col_ptr)
+{
+  double x_values[MAX_PDEG];
+  double y_values[MAX_PDEG];
+  x_values[0] = 1.;
+  y_values[0] = 1.;
+
+  for(int i = 1; i <= pdeg; i++)
+    {
+      x_values[i] = x_values[i-1]*x;
+      y_values[i] = y_values[i-1]*y;
+    }
+  row_ptr[0] = 1.;
+  col_ptr[0] = 1.;
+  int counter = 1;
+  for(int i = 0; i < pdeg; i++)
+    {
+      int max_grade = i+1;
+      for(int j = 0; j <= max_grade; j++)
+	{
+	  double value = x_values[max_grade-j]*y_values[j];
+	  row_ptr[counter] = value;
+	  col_ptr[counter*col_stride] = value;
+	  counter++;
+	}
+    }
+}
 
 /*
   This is a simpler version of the above which only writes into one pointer.
 */
 
-__device__ void row_vector_from_polynomial_simpler(double x, double y, int pdeg, double *row_ptr);
+__device__ inline void row_vector_from_polynomial_simpler(double x, double y, int pdeg, double *row_ptr)
+{
+  double x_values[MAX_PDEG];
+  double y_values[MAX_PDEG];
+  x_values[0] = 1.;
+  y_values[0] = 1.;
+
+  for(int i = 1; i <= pdeg; i++)
+    {
+      x_values[i] = x_values[i-1]*x;
+      y_values[i] = y_values[i-1]*y;
+    }
+  row_ptr[0] = 1.;
+  int counter = 1;
+  for(int i = 0; i < pdeg; i++)
+    {
+      int max_grade = i+1;
+      for(int j = 0; j <= max_grade; j++)
+	{
+	  double value = x_values[max_grade-j]*y_values[j];
+	  row_ptr[counter] = value;
+	  counter++;
+	}
+    }
+}
 
 
 #endif /* CUDA_RBF_H */
