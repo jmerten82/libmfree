@@ -142,12 +142,19 @@ class mq_rbf
     switch(selection)
       {
       case 1: res = mq_dx(x,y,shape_squared);
+	break;
       case 2: res = mq_dx(y,x,shape_squared);
+	break;
       case 3: res = mq_dxx(x,y,shape_squared);
+	break;
       case 4: res = mq_dxx(y,x,shape_squared);
+	break;
       case 5: res = mq_dxy(x,y,shape_squared);
+	break;
       case 6: res = mq_laplace(x,y,shape_squared);
+	break;
       case 7: res = mq_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -190,12 +197,19 @@ class imq_rbf
     switch(selection)
       {
       case 1: res = imq_dx(x,y,shape_squared);
+	break;
       case 2: res = imq_dx(y,x,shape_squared);
+	break;
       case 3: res = imq_dxx(x,y,shape_squared);
+	break;
       case 4: res = imq_dxx(y,x,shape_squared);
+	break;
       case 5: res = imq_dxy(x,y,shape_squared);
+	break;
       case 6: res = imq_laplace(x,y,shape_squared);
+	break;
       case 7: res = imq_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -237,12 +251,19 @@ class iq_rbf
     switch(selection)
       {
       case 1: res = iq_dx(x,y,shape_squared);
+	break;
       case 2: res = iq_dx(y,x,shape_squared);
+	break;
       case 3: res = iq_dxx(x,y,shape_squared);
+	break;
       case 4: res = iq_dxx(y,x,shape_squared);
+	break;
       case 5: res = iq_dxy(x,y,shape_squared);
+	break;
       case 6: res = iq_laplace(x,y,shape_squared);
+	break;
       case 7: res = iq_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };

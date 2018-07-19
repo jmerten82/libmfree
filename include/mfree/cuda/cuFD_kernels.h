@@ -126,6 +126,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		b[offsetb+blockDim.x+1] = 1.;
 	      }
 	  }
+	  break;
 	case 2:
 	  {
 	    for(int i = blockDim.x+3; i < matrix_stride; i++)
@@ -139,6 +140,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		b[offsetb+blockDim.x+2] = 1.;
 	      }
 	  }
+	  break;
 	case 3:
 	  {
 	    for(int i = blockDim.x+4; i < matrix_stride; i++)
@@ -157,6 +159,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 	      }
 
 	  }
+	  break;
 	case 4:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -176,6 +179,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 5:
 	  {
 	    for(int i = blockDim.x+5; i < matrix_stride; i++)
@@ -194,6 +198,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 6:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -213,6 +218,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 7:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -232,6 +238,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	}
     }
 }
@@ -759,6 +766,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		b[offsetb+blockDim.x+1] = factor;
 	      }
 	  }
+	  break;
 	case 2:
 	  {
 	    for(int i = blockDim.x+3; i < matrix_stride; i++)
@@ -772,6 +780,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		b[offsetb+blockDim.x+2] = factor;
 	      }
 	  }
+	  break;
 	case 3:
 	  {
 	    for(int i = blockDim.x+4; i < matrix_stride; i++)
@@ -790,6 +799,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 	      }
 
 	  }
+	  break;
 	case 4:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -809,6 +819,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 5:
 	  {
 	    for(int i = blockDim.x+5; i < matrix_stride; i++)
@@ -827,6 +838,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 6:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -846,6 +858,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	case 7:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -865,6 +878,7 @@ template<class T> __global__ void cuFD_weights_vector_part(int* tree, double *al
 		  }
 	      }
 	  }
+	  break;
 	}
     }
 }

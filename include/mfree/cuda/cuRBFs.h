@@ -83,12 +83,19 @@ class ga_rbf
     switch(selection)
       {
       case 1: res = ga_dx(x,y,shape_squared);
+	break;
       case 2: res = ga_dx(y,x,shape_squared);
+	break;
       case 3: res = ga_dxx(x,y,shape_squared);
+	break;
       case 4: res = ga_dxx(y,x,shape_squared);
+	break;
       case 5: res = ga_dxy(x,y,shape_squared);
+	break;
       case 6: res = ga_laplace(x,y,shape_squared);
+	break;
       case 7: res = ga_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };

@@ -693,12 +693,19 @@ class phs1_rbf
     switch(selection)
       {
       case 1: res = phs1_dx(x,y,shape_squared);
+	break;
       case 2: res = phs1_dx(y,x,shape_squared);
+	break;
       case 3: res = phs1_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs1_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs1_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs1_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs1_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -737,12 +744,19 @@ class phs2_rbf
     switch(selection)
       {
       case 1: res = phs2_dx(x,y,shape_squared);
+	break;
       case 2: res = phs2_dx(y,x,shape_squared);
+	break;
       case 3: res = phs2_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs2_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs2_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs2_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs2_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -781,12 +795,19 @@ class phs3_rbf
     switch(selection)
       {
       case 1: res = phs3_dx(x,y,shape_squared);
+	break;
       case 2: res = phs3_dx(y,x,shape_squared);
+	break;
       case 3: res = phs3_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs3_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs3_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs3_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs3_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -825,12 +846,19 @@ class phs4_rbf
     switch(selection)
       {
       case 1: res = phs4_dx(x,y,shape_squared);
+	break;
       case 2: res = phs4_dx(y,x,shape_squared);
+	break;
       case 3: res = phs4_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs4_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs4_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs4_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs4_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -869,12 +897,19 @@ class phs5_rbf
     switch(selection)
       {
       case 1: res = phs5_dx(x,y,shape_squared);
+	break;
       case 2: res = phs5_dx(y,x,shape_squared);
+	break;
       case 3: res = phs5_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs5_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs5_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs5_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs5_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -913,12 +948,19 @@ class phs6_rbf
     switch(selection)
       {
       case 1: res = phs6_dx(x,y,shape_squared);
+	break;
       case 2: res = phs6_dx(y,x,shape_squared);
+	break;
       case 3: res = phs6_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs6_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs6_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs6_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs6_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -957,12 +999,19 @@ class phs7_rbf
     switch(selection)
       {
       case 1: res = phs7_dx(x,y,shape_squared);
+	break;
       case 2: res = phs7_dx(y,x,shape_squared);
+	break;
       case 3: res = phs7_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs7_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs7_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs7_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs7_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -1001,12 +1050,19 @@ class phs8_rbf
     switch(selection)
       {
       case 1: res = phs8_dx(x,y,shape_squared);
+	break;
       case 2: res = phs8_dx(y,x,shape_squared);
+	break;
       case 3: res = phs8_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs8_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs8_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs8_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs8_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -1045,12 +1101,19 @@ class phs9_rbf
     switch(selection)
       {
       case 1: res = phs9_dx(x,y,shape_squared);
+	break;
       case 2: res = phs9_dx(y,x,shape_squared);
+	break;
       case 3: res = phs9_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs9_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs9_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs9_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs9_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -1089,12 +1152,19 @@ class phs10_rbf
     switch(selection)
       {
       case 1: res = phs10_dx(x,y,shape_squared);
+	break;
       case 2: res = phs10_dx(y,x,shape_squared);
+	break;
       case 3: res = phs10_dxx(x,y,shape_squared);
+	break;
       case 4: res = phs10_dxx(y,x,shape_squared);
+	break;
       case 5: res = phs10_dxy(x,y,shape_squared);
+	break;
       case 6: res = phs10_laplace(x,y,shape_squared);
+	break;
       case 7: res = phs10_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };

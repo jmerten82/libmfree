@@ -152,6 +152,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		b[offsetb+blockDim.x+1] = 1.;
 	      }
 	  }
+	  break;
 	case 2:
 	  {
 	    for(int i = blockDim.x+3; i < matrix_stride; i++)
@@ -165,6 +166,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		b[offsetb+blockDim.x+2] = 1.;
 	      }
 	  }
+	  break;
 	case 3:
 	  {
 	    for(int i = blockDim.x+4; i < matrix_stride; i++)
@@ -183,6 +185,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 	      }
 
 	  }
+	  break;
 	case 4:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -202,6 +205,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 5:
 	  {
 	    for(int i = blockDim.x+5; i < matrix_stride; i++)
@@ -220,6 +224,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 6:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -239,6 +244,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 7:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -258,6 +264,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	}
     }
 }
@@ -542,6 +549,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		b[offsetb+blockDim.x+1] = factor;
 	      }
 	  }
+	  break;
 	case 2:
 	  {
 	    for(int i = blockDim.x+3; i < matrix_stride; i++)
@@ -555,6 +563,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		b[offsetb+blockDim.x+2] = factor;
 	      }
 	  }
+	  break;
 	case 3:
 	  {
 	    for(int i = blockDim.x+4; i < matrix_stride; i++)
@@ -573,6 +582,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 	      }
 
 	  }
+	  break;
 	case 4:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -592,6 +602,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 5:
 	  {
 	    for(int i = blockDim.x+5; i < matrix_stride; i++)
@@ -610,6 +621,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 6:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -629,6 +641,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	case 7:
 	  {
 	    for(int i = blockDim.x+6; i < matrix_stride; i++)
@@ -648,6 +661,7 @@ __global__ void cuFD_optimise_const_part(int* tree, double *all_coordinates, int
 		  }
 	      }
 	  }
+	  break;
 	}
     }
 }

@@ -47,12 +47,19 @@ vector<double> cuFD_differentiate_and_return(int derivative_selection, cuda_mana
   switch(derivative_selection)
     {
     case 1: selection = "dx";
+      break;
     case 2: selection = "dy";
+      break;
     case 3: selection = "dxx";
+      break;
     case 4: selection = "dxy";
+      break;
     case 5: selection = "dxy";
+      break;
     case 6: selection = "laplace";
+      break;
     case 7: selection = "neg_laplace";
+      break;
     }
 
   //numbers
@@ -89,12 +96,19 @@ void cuFD_differentiate(int derivative_selection, cuda_manager *cuman)
   switch(derivative_selection)
     {
     case 1: selection = "dx";
+      break;
     case 2: selection = "dy";
+      break;
     case 3: selection = "dxx";
+      break;
     case 4: selection = "dxy";
+      break;
     case 5: selection = "dxy";
+      break;
     case 6: selection = "laplace";
+      break;
     case 7: selection = "neg_laplace";
+      break;
     }
 
   //numbers

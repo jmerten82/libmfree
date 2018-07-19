@@ -328,12 +328,19 @@ class wc0_rbf
     switch(selection)
       {
       case 1: res = wc0_dx(x,y,shape_squared);
+	break;
       case 2: res = wc0_dx(y,x,shape_squared);
+	break;
       case 3: res = wc0_dxx(x,y,shape_squared);
+	break;
       case 4: res = wc0_dxx(y,x,shape_squared);
+	break;
       case 5: res = wc0_dxy(x,y,shape_squared);
+	break;
       case 6: res = wc0_laplace(x,y,shape_squared);
+	break;
       case 7: res = wc0_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -372,12 +379,19 @@ class wc2_rbf
     switch(selection)
       {
       case 1: res = wc2_dx(x,y,shape_squared);
+	break;
       case 2: res = wc2_dx(y,x,shape_squared);
+	break;
       case 3: res = wc2_dxx(x,y,shape_squared);
+	break;
       case 4: res = wc2_dxx(y,x,shape_squared);
+	break;
       case 5: res = wc2_dxy(x,y,shape_squared);
+	break;
       case 6: res = wc2_laplace(x,y,shape_squared);
+	break;
       case 7: res = wc2_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
@@ -416,12 +430,19 @@ class wc4_rbf
     switch(selection)
       {
       case 1: res = wc4_dx(x,y,shape_squared);
+	break;
       case 2: res = wc4_dx(y,x,shape_squared);
+	break;
       case 3: res = wc4_dxx(x,y,shape_squared);
+	break;
       case 4: res = wc4_dxx(y,x,shape_squared);
+	break;
       case 5: res = wc4_dxy(x,y,shape_squared);
+	break;
       case 6: res = wc4_laplace(x,y,shape_squared);
+	break;
       case 7: res = wc4_neg_laplace(x,y,shape_squared);
+	break;
       }
     return res;
   };
