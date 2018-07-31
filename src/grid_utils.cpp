@@ -869,3 +869,38 @@ vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mes
   return adaptive_shape_parameter;
 
 }
+
+
+vector<vector<double> > compare_maps(vector<double> *map, vector<double> *reference, double *max_abs, double *mean_abs, double *mean_rel, double *max_rel)
+{
+  int dim = map->size();
+  if(dim < reference->size())
+    {
+      throw invalid_argument("GRID_UTILS: Maps do not match for comparison.");
+    }
+  vector<double> absolute(dim,0.);
+  vector<double> rel(dim,0.);
+
+  for(int i = 0; i < dim; i++)
+    {
+      double ref = (*reference)[i];
+      absolute[i] = abs((*map)[i]-ref);
+      rel[i] = absolute[i];
+      if(ref != 0.)
+	{
+	  rel[i] /= ref;
+	}
+    }
+  vector<double>::iterator it;
+  it = max_element(absolute.begin(),absolute.end());
+  *max_abs = *it;
+  *mean_abs = gsl_stats_mean(&absolute[0],1,dim);  
+  it = max_element(rel.begin(),rel.end());
+  *max_rel = *it;
+  *mean_rel = gsl_stats_mean(&rel[0],1,dim);
+  vector<vector<double> > out;
+  out.push_back(absolute);
+  out.push_back(rel);
+
+  return out;
+}

@@ -153,6 +153,15 @@ double optimise_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free
 
 vector<double> optimise_adaptive_grid_interpolation(mesh_free *mesh_free_in, mesh_free *mesh_free_target, radial_basis_function *rbf_in, unsigned int pdeg,  test_function *test_function_in, int knn = 16, string test_function_switch = "", int refinements = 1, int steps = 100, double eps = 1e-3, string verbose_mode = "");
 
+/*
+  This compares a map to a reference and returns the absolute and relative
+  errors, as well as the mean abolute and relative error, together with 
+  the maximum absolute and relative error.
+*/
+
+vector<vector<double> > compare_maps(vector<double> *map, vector<double> *reference, double *max_abs, double *mean_abs, double *mean_relative, double *max_relative);
+
+
 
 
 #endif    /*GRID_UTILS_H*/

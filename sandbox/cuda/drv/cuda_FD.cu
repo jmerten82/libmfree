@@ -31,21 +31,18 @@ int main(int argc, char* argv[])
   TCLAP::CmdLine cmd("cuda_FD", ' ',"0.1");
   TCLAP::ValueArg<int> nnArg("n","nn","Number of nearest neighbours.",false,32,"int",cmd);
   TCLAP::ValueArg<int> dimArg("d","dim","Number of nodes.",false,1000,"int",cmd);  
-  TCLAP::ValueArg<int> pdegArg("p","pdeg","Order of polynomial support.",false,4,"int",cmd);   
+  TCLAP::ValueArg<int> pdegArg("p","pdeg","Order of polynomial support.",false,4,"int",cmd);
+  TCLAP::ValueArg<double> shapeArg("e","eps","The RBF shape parameter.",false,1.0,"double",cmd);  
   TCLAP::ValueArg<string> fileArg("f","file","The filename for the FITS output checks.",false,"../../results/cuda_FD_output.fits","string",cmd);
-  TCLAP::ValueArg<double> shapeArg("e","epsilon","The fixed shape parameter for the FD operations.",false,1.0,"double",cmd);
-  TCLAP::SwitchArg optArg("o","opt","Switch to turn on shape optimisation for device FD.",cmd);
   TCLAP::ValueArg<string> rbfArg("r","rbf","The RBF to use.",false,"ga","string",cmd);
-
  cmd.parse( argc, argv );
 
  int dim = dimArg.getValue();
  int nn = nnArg.getValue();
  int pdeg = pdegArg.getValue();
  string filename = fileArg.getValue();
- double epsilon = shapeArg.getValue();
- bool shapeopt = optArg.getValue();
  string rbf_name = rbfArg.getValue();
+ double epsilon = shapeArg.getValue();
 
  int rbf_number = 0;
  if(rbf_name == "ga")
@@ -65,7 +62,6 @@ int main(int argc, char* argv[])
      rbf_number = 4;
    }
 
- cout <<rbf_number <<endl;
  //Stopwatch for benchmarking
  StopWatchLinux sw;
 
