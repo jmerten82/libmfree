@@ -15,8 +15,8 @@ http://www.julianmerten.net
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <saw2/cuda/cuda_manager.h>
-#include <saw2/cuda/cuda_device_functions.h>
+#include <mfree/cuda/cuda_manager.h>
+#include <mfree/cuda/cuRBFs.h>
 
 /**
   The first set of kernels calculates the linear system of 
@@ -32,12 +32,12 @@ http://www.julianmerten.net
   radial basis function and a pointer to the coefficient matrix. 
 */
 
-template<class T> __global__ cuIP_matrix_part(int *index_map, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, int matrix_stride, int pdeg, double *A, T *rbf)
+template<class T> __global__ void cuIP_matrix_part(int *index_map, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, int matrix_stride, int pdeg, double *A, T *rbf)
 {
   int offsetA = blockIdx.x*matrix_stride*matrix_stride;
   
   //Getting all nearest neighbours in the shared memory
-  __shared__ double coordinates[SHAPE_OPT_MAX_NN][2];
+  __shared__ double coordinates[MAX_NN][2];
   int index = index_map[blockIdx.x*blockDim.x+threadIdx.x];
   coordinates[threadIdx.x][0] = interpolant_coordinates[index*2] - interpolation_coordinates[blockIdx.x*2];
   coordinates[threadIdx.x][1] = interpolant_coordinates[index*2+1] - interpolation_coordinates[blockIdx.x*2+1];
@@ -64,7 +64,7 @@ template<class T> __global__ cuIP_matrix_part(int *index_map, double *interpolat
   to the result vector.
 */
 
-__global__ cuIP_vector_part(int* index_map, double *interpolant,int matrix_stride, double* b);
+__global__ void cuIP_vector_part(int* index_map, double *interpolant,int matrix_stride, double* b);
 
 /**
    The second set of kernels calculates the scalar product between
@@ -77,7 +77,32 @@ __global__ cuIP_vector_part(int* index_map, double *interpolant,int matrix_strid
   a power of 2. If not, the kernel will provide wrong results.
 */
 
-__global__ void cuIP_product_pow2(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *i, int matrix_stride);
+template<class T> __global__ void cuIP_product_pow2(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *i, int matrix_stride, T *rbf)
+{
+  int index_c = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  double x = interpolant_coordinates[index_c*2] - interpolation_coordinates[blockIdx.x*2];
+  double y = interpolant_coordinates[index_c*2+1] - interpolation_coordinates[blockIdx.x*2+1];
+  __shared__ double product[MAX_NN];
+
+  product[threadIdx.x] = (*rbf)(x,y,shapes[blockIdx.x])*w[blockIdx.x*matrix_stride+threadIdx.x];
+  __syncthreads();
+
+  index_c = blockDim.x /2;
+  while(index_c != 0)
+    {
+      if(threadIdx.x < index_c)
+	{
+	  product[threadIdx.x] += product[threadIdx.x +index_c];
+	}
+      __syncthreads();
+      index_c /= 2;
+    }
+
+  if(threadIdx.x == 0)
+    {
+      i[blockIdx.x] = product[0]+w[blockIdx.x*matrix_stride+blockDim.x];
+    }
+};
 
 /*
   This is the more general version of the routine where the number
@@ -85,7 +110,27 @@ __global__ void cuIP_product_pow2(int *tree, double *interpolation_coordinates, 
   slower than the version above. 
 */
 
-__global__ void cuIP_product(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *i, int matrix_stride);
+template<class T> __global__ void cuIP_product(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *i, int matrix_stride, T *rbf)
+{
+  int index_c = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  double x = interpolant_coordinates[index_c*2] - interpolation_coordinates[blockIdx.x*2];
+  double y = interpolant_coordinates[index_c*2+1] - interpolation_coordinates[blockIdx.x*2+1];
+  __shared__ double product[MAX_NN];
+
+  product[threadIdx.x] = (*rbf)(x,y,shapes[blockIdx.x])*w[blockIdx.x*matrix_stride+threadIdx.x];
+  __syncthreads();
+
+
+  if(threadIdx.x == 0)
+    {
+      double sum = w[blockIdx.x*matrix_stride+blockDim.x]; //This is the const.
+      for(index_c = 0; index_c < blockDim.x; index_c++)
+	{
+	  sum += product[index_c];
+	}  
+      i[blockIdx.x] = sum; 
+    }
+};
 
 /**
    The final set of kernels splits the building of result vector
@@ -106,7 +151,7 @@ template<class T> __global__ void cuIP_optimise_shape_dependent_part(int* tree, 
   int offsetA = blockIdx.x*matrix_stride*matrix_stride;
 
   //Getting all nearest neighbours in the shared memory
-  __shared__ double coordinates[SHAPE_OPT_MAX_NN][2];
+  __shared__ double coordinates[MAX_NN][2];
   int index = tree[blockIdx.x*blockDim.x+threadIdx.x];
   coordinates[threadIdx.x][0] = interpolant_coordinates[index*2] - interpolation_coordinates[blockIdx.x*2];
   coordinates[threadIdx.x][1] = interpolant_coordinates[index*2+1] - interpolation_coordinates[blockIdx.x*2+1];
@@ -135,9 +180,55 @@ __global__ void cuIP_optimise_const_part(int* tree, double *interpolation_coordi
    and the general (slightly slower) case is made. 
 */
 
-__global__ void cuIP_optimise_calculate_IP_and_compare_pow2(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *truth, double *err, int matrix_stride);
+template<class T> __global__ void cuIP_optimise_calculate_IP_and_compare_pow2(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *truth, double *err, int matrix_stride, T *rbf)
+{
+  int index_c = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  double x = interpolant_coordinates[index_c*2] - interpolation_coordinates[blockIdx.x*2];
+  double y = interpolant_coordinates[index_c*2+1] - interpolation_coordinates[blockIdx.x*2+1];
+  __shared__ double product[MAX_NN];
 
-__global__ void cuIP_optimise_calculate_IP_and_compare(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *truth, double *err, int matrix_stride);
+  product[threadIdx.x] = (*rbf)(x,y,shapes[blockIdx.x])*w[blockIdx.x*matrix_stride+threadIdx.x];
+  __syncthreads();
+
+  index_c = blockDim.x /2;
+  while(index_c != 0)
+    {
+      if(threadIdx.x < index_c)
+	{
+	  product[threadIdx.x] += product[threadIdx.x +index_c];
+	}
+      __syncthreads();
+      index_c /= 2;
+    }
+
+  if(threadIdx.x == 0)
+    {
+      double correct = truth[blockIdx.x]; 
+      err[blockIdx.x] = abs((product[0]+w[blockIdx.x*matrix_stride+blockDim.x]-correct)/correct);
+    }
+};
+
+template<class T> __global__ void cuIP_optimise_calculate_IP_and_compare(int *tree, double *interpolation_coordinates, double *interpolant_coordinates, double *shapes, double *w, double *truth, double *err, int matrix_stride, T *rbf)
+{
+  int index_c = tree[blockIdx.x*blockDim.x+threadIdx.x];
+  double x = interpolant_coordinates[index_c*2] - interpolation_coordinates[blockIdx.x*2];
+  double y = interpolant_coordinates[index_c*2+1] - interpolation_coordinates[blockIdx.x*2+1];
+  __shared__ double product[MAX_NN];
+
+  product[threadIdx.x] = (*rbf)(x,y,shapes[blockIdx.x])*w[blockIdx.x*matrix_stride+threadIdx.x];
+  __syncthreads();
+
+  if(threadIdx.x == 0)
+    {
+      double sum = w[blockIdx.x*matrix_stride+blockDim.x]; //This is the const.
+      for(int index = 0; index < blockDim.x; index++)
+	{
+	  sum += product[index];
+	} 
+      double correct = truth[blockIdx.x];
+      err[blockIdx.x] = abs((sum - correct)/correct); 
+    }
+};
 
 
 #endif /* CUDA_CUIP_KERNELS_H */
